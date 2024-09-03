@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
-# this cmake is different than the one given to us from the class because this one uses the modern target workflow.
+# this cmake is different than the one given to us from the class because 
+# this one uses modern tools (that work with cmake versions >3.14) to allow 
+# us to pull down libraries without hassle
 project(lab1 LANGUAGES CXX)
 
 # next, im using cpm (cmake package manager) to pull down, pass options to, and make available the SFML library.
@@ -10,5 +12,6 @@ CPMAddPackage(
   NAME SFML
   GITHUB_REPOSITORY SFML/SFML
   GIT_TAG 11b73743c42cf7ecd7c596ba83fdbf1150ffa96c
+  OPTIONS "SFML_BUILD_AUDIO FALSE"
 )
 
