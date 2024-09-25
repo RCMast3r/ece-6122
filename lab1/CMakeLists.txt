@@ -12,6 +12,9 @@ CPMAddPackage(
   NAME SFML
   GITHUB_REPOSITORY SFML/SFML
   GIT_TAG 11b73743c42cf7ecd7c596ba83fdbf1150ffa96c
-  OPTIONS "SFML_BUILD_AUDIO FALSE"
+  OPTIONS "SFML_BUILD_AUDIO=FALSE"
 )
 
+
+add_executable(game src/main.cpp)
+target_link_libraries(game PUBLIC sfml-graphics)
