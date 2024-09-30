@@ -23,7 +23,7 @@ int main()
     sf::Font font;
     if (!font.loadFromFile("assets/arial.ttf"))
         return EXIT_FAILURE;
-    sf::Text text("Hello SFML", font, 50);
+    sf::Text text("Hello SFML",font, 50);
  
     
  

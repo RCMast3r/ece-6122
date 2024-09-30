@@ -15,6 +15,7 @@ CPMAddPackage(
   OPTIONS "SFML_BUILD_AUDIO=FALSE"
 )
 
-
+window.clear();
+ 
 add_executable(game src/main.cpp)
 target_link_libraries(game PUBLIC sfml-graphics)
