@@ -5,24 +5,31 @@
 
 #include <memory>
 // linked list made from the sprite base class
-// responsibility: detect collision with entities: (laser positions and starship position)
-class ECE_Centipede : sf::Sprite
+// responsibilities: 
+// - [ ] detect collision with entities: (laser positions and starship position)
+// - [ ] calculating its own position (if it is a head it is moving, if it is a body it is following)
+
+class ECE_Centipede : public sf::Sprite
 {
     public:
         ECE_Centipede(bool isHead);
-        void setBodyPosition(sf::Vector2f position);
-        void append(std::shared_ptr<ECE_Centipede> newNode);
-        void evaluate(std::vector<sf::Vector2f> mushroomPositions, float deltaTime);
+        // void setBodyPosition(sf::Vector2f position);
+        void evaluateHeadPosition(std::vector<sf::Vector2f> mushroomPositions, float deltaTime);
+        void evaluateBodyPosition(sf::Vector2f prevSegmentPosition, float deltaTime);
         bool isHead() {return _isHead; }
-        void follow(sf::Vector2f newPos);
-        std::shared_ptr<ECE_Centipede> _next = nullptr;
+        sf::Vector2f getVelocity() {return {_velX, _velY}; }
+        void setVelocity(sf::Vector2f vel) {_velX = vel.x; _velY = vel.y;}
     private:
-        void _updateHeadVelocities(std::vector<sf::Vector2f> mushroomPositions);
+        float _distance(sf::Vector2f a, sf::Vector2f b);
+        void _updateHeadVelocities(std::vector<sf::Vector2f> mushroomPositions, float deltaTime);
     private:
+        float _orientationDeg = 0;
         bool _isHead;
+        bool _isMovingVertically;
+        bool _isMovingDown, _isMovingRight;
         sf::Texture _headTexture, _bodyTexture;
-        
-        float _velX, _velY;
+        float _followDistance; 
+        float _velX, _velY, _prevVerticalStartY;
         // pos _start_pos;
 
 };

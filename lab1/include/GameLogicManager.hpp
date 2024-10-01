@@ -19,7 +19,7 @@ Description:
 #include <MushroomManager.hpp>
 #include <ECE_LaserBlast.hpp>
 #include <ECE_Centipede.hpp>
-
+#include <CentipedeManager.hpp>
 // user story:
 // i want this class to manage all of the game-level logic (score, lives, when to switch screens, etc.)
 
@@ -54,7 +54,7 @@ class GameLogicManager
         StarShip _starship;
         Spider _spider;
         MushroomManager _mushroomManager;
-        ECE_Centipede _centipede;
+        CentipedeManager _centipede;
         int _currentScore = 0;
         
 };

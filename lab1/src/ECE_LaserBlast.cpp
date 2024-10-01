@@ -17,7 +17,6 @@ ECE_LaserBlast::BlastState ECE_LaserBlast::getState(float deltaTime, std::list<M
     {
         if( (::abs(getPosition().x - (mushroom.x + (27/2))) < (20)) && (::abs(getPosition().y - (mushroom.y + (27/2))) < 20))
         {
-            std::cout <<"impacting" <<std::endl;
             _state.impacted = true;
             toErase.push_back(ind);
         }

@@ -46,7 +46,6 @@ Spider::SpiderState Spider::getState(float deltaTime, std::list<MushroomManager:
     ||
         (_state.sprite.getPosition().y + (_velY * deltaTime)) < 300 )
     {
-        std::cout <<_state.sprite.getPosition().y + (_velY * deltaTime) <<std::endl;
         _velY*=-1;
     }
     _state.sprite.move({ (_velX * deltaTime), (_velY*deltaTime)});

@@ -7,8 +7,7 @@ GameLogicManager::GameLogicManager(bool &construction_failure) : _window(sf::Vid
                                                                  _gameState(GameLogicManager::GameState::STARTUP),
                                                                  _starship(1036, 260, 310, 0.0, construction_failure),
                                                                  _mushroomManager(1036, 380, 30, construction_failure),
-                                                                 _spider(1036, 260),
-                                                                 _centipede(true)
+                                                                 _spider(1036, 260)
 {
 
     _font.loadFromFile("graphics/arial.ttf");
@@ -150,13 +149,10 @@ void GameLogicManager::_drawGame()
                 _window.draw(*((sf::Sprite *)&laser));
             }
 
-            _window.draw(*((sf::Sprite*)&_centipede));
-
-            auto next = _centipede._next;
-            while(next)
+            auto segmentsToDraw = _centipede.getSegments();
+            for(auto segment : segmentsToDraw)
             {
-                _window.draw(*(sf::Sprite *)next.get());
-                next = next->_next;
+                _window.draw(*(sf::Sprite *)&segment);
             }
             
         }
@@ -209,7 +205,7 @@ void GameLogicManager::tickGame(float deltaTime)
         auto spiderState = _spider.getState(deltaTime, _mushroomManager.getMushroomStates());
 
         _starship.command(_gendInput, deltaTime, spiderState);
-        _centipede.evaluate({}, deltaTime);
+        _centipede.evaluateSegments({}, deltaTime);
     }
     
     _drawGame();

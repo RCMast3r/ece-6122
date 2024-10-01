@@ -1,35 +1,42 @@
 #include <ECE_Centipede.hpp>
 #include <iostream>
-// constructor for the linked list that creates all of the nodes, setting all
+#include <cmath>
+
+
 ECE_Centipede::ECE_Centipede(bool isHead) : _isHead(isHead)
 {
+    _followDistance = 24;
     _headTexture.loadFromFile("graphics/CentipedeHead.png");
     _bodyTexture.loadFromFile("graphics/CentipedeBody.png");
+
+    
     if (isHead)
     {
         _velX = 200.0;
         _velY = 0.0;
-        for (int i = 0; i < 11; i++)
-        {
-            std::cout << "appending new node in constructor" << std::endl;
-            std::shared_ptr<ECE_Centipede> newNode = std::make_shared<ECE_Centipede>(false);
-            this->append(newNode);
-        }
         setTexture(_headTexture);
     }
+
     else
     {
         setTexture(_bodyTexture);
         _velX = 0.0;
         _velY = 0.0;
     }
+
     setPosition({(float)(1036 / 2), (float)53});
+    _isMovingVertically = false;
+    _isMovingDown = true; // start by going down the screen
+    _isMovingRight = true; // start by going down the screen
+}
+
+float ECE_Centipede::_distance(sf::Vector2f a, sf::Vector2f b) {
+    return std::sqrt((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y));
 }
 
 // if this section is a head, update its own position and make all positions of every other non-heads
 // an "offset" from the parent's node
 
-// - [ ] make
 // motion:
 // the head starts moving right to left, starting from the top-middle of the screen
 // each body piece follows it, and a head hits a mushroom or wall it turns down and
@@ -37,51 +44,54 @@ ECE_Centipede::ECE_Centipede(bool isHead) : _isHead(isHead)
 // instead of turning down once at an each or mushroom, it starts progressing back up
 // to the top of the screen.
 
-void ECE_Centipede::_updateHeadVelocities(std::vector<sf::Vector2f> mushroomPositions)
+void ECE_Centipede::_updateHeadVelocities(std::vector<sf::Vector2f> mushroomPositions, float deltaTime)
 {
-    if(getPosition().x)
-}
-
-void ECE_Centipede::evaluate(std::vector<sf::Vector2f> mushroomPositions, float deltaTime)
-{
-    auto currentPosition = getPosition();
-
-    std::cout << "moving head" << std::endl;
-    
-    move(_velX * deltaTime, _velY * deltaTime);
-    auto newHeadPos = getPosition();
-
-    if (_next != nullptr)
+    // if the head has reached a wall and we have yet to start moving down, start moving vertically 
+    if(_isHead)
     {
-        _next->follow(newHeadPos);
-    }
-}
-void ECE_Centipede::follow(sf::Vector2f newPos)
-{
-    auto currentPos = getPosition();
-
-    setPosition({newPos.x - 27, newPos.y});
-
-    if (_next != nullptr)
-    {
-        _next->follow(currentPos);
+        auto posX = getPosition().x;
+        auto predictedX = (posX + 24 + (deltaTime * _velX));
+        if( ((predictedX >= 1036) || (predictedX <= 24 )) && !_isMovingVertically){
+            _isMovingVertically = true;
+            _prevVerticalStartY = getPosition().y;
+            _velX = 0; // stop horizontal motion
+            _velY = _isMovingDown ? 200.0 : -200.0;
+            std::cout << predictedX <<std::endl;
+        } else if(_isMovingVertically && (::abs(_prevVerticalStartY - getPosition().y) >= 24)){ 
+            // if we are moving verically and the diff between our last 
+            // veritical movement is great enough, swap direction of x velocity
+            _isMovingRight = !_isMovingRight;
+            _velX = _isMovingRight ? 200 : -200;
+            _velY = 0;
+            _isMovingVertically = false;
+            std::cout << predictedX <<std::endl;
+        } else {
+            _velX = _velX;
+        }
     }
 }
 
-void ECE_Centipede::setBodyPosition(sf::Vector2f position)
+void ECE_Centipede::evaluateHeadPosition(std::vector<sf::Vector2f> mushroomPositions, float deltaTime)
 {
-
-    setPosition(position);
+    if(_isHead)
+    { 
+        move(_velX * deltaTime, _velY * deltaTime);
+    }
+    _updateHeadVelocities(mushroomPositions, deltaTime);
 }
 
-void ECE_Centipede::append(std::shared_ptr<ECE_Centipede> newNode)
+
+// expected behavior of the body segments:
+// the segments should move to the previous segment's position when the previous segments position 
+// is over the desired distance away.
+void ECE_Centipede::evaluateBodyPosition(sf::Vector2f prevSegmentPosition, float deltaTime)
 {
-    if (!_next)
+    if(!_isHead && (_distance(getPosition(), prevSegmentPosition)> 24))
     {
-        _next = newNode;
-    }
-    else
-    {
-        _next->append(newNode);
+        setPosition(prevSegmentPosition);
+        // return true;
+        // move(_velX * deltaTime, _velY * deltaTime);
+    } else {
+        // return false;
     }
 }

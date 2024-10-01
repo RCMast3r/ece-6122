@@ -67,7 +67,7 @@ int main() {
             if (dist > followDistance) {
                 // Normalize the direction vector and move the particle towards the one ahead
                 particles[i].move(normalize(dir) * (speed * deltaTime));
-            }
+            } else {}
         }
 
         // Rendering

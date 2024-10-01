@@ -30,6 +30,7 @@ add_executable(game
   src/ECE_LaserBlast.cpp
   src/Spider.cpp
   src/ECE_Centipede.cpp
+  src/CentipedeManager.cpp
 )
 
 # add_executable(test
