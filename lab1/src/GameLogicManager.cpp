@@ -7,15 +7,18 @@ GameLogicManager::GameLogicManager(bool &construction_failure) : _window(sf::Vid
                                                                  _gameState(GameLogicManager::GameState::STARTUP),
                                                                  _starship(1036, 260, 310, 0.0, construction_failure),
                                                                  _mushroomManager(1036, 380, 30, construction_failure),
-                                                                 _spider(1036, 260)
+                                                                 _spider(1036, 260),
+                                                                 _centipede(true)
 {
 
     _font.loadFromFile("graphics/arial.ttf");
+    
     _score.setFont(_font);
     _score.setString(std::to_string(_currentScore));
     _score.setCharacterSize(30); 
     _score.setFillColor(sf::Color::White); 
     _score.setPosition((1036/2), 15); 
+
     if (!_startDisplay.loadFromFile("graphics/StartupScreenBackGround.png"))
     {
         construction_failure = true;
@@ -146,6 +149,16 @@ void GameLogicManager::_drawGame()
             {
                 _window.draw(*((sf::Sprite *)&laser));
             }
+
+            _window.draw(*((sf::Sprite*)&_centipede));
+
+            auto next = _centipede._next;
+            while(next)
+            {
+                _window.draw(*(sf::Sprite *)next.get());
+                next = next->_next;
+            }
+            
         }
     }
     _window.display();
@@ -196,6 +209,8 @@ void GameLogicManager::tickGame(float deltaTime)
         auto spiderState = _spider.getState(deltaTime, _mushroomManager.getMushroomStates());
 
         _starship.command(_gendInput, deltaTime, spiderState);
+        _centipede.evaluate({}, deltaTime);
     }
+    
     _drawGame();
 }

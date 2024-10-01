@@ -23,15 +23,15 @@ Description: top-level main with run-time loop
 // - 
 
 // TODOs:
-// - [ ] main start screen w/ pressing enter to start the game
-// - [ ] space-ship entity logic
-// - [ ] centipede class for calculating new location based -> tick system based on current time and fixed velocity
-// - [ ] 
-// - [ ] laser blast
-// - [ ] game tick / tick rate 
+// - [x] main start screen w/ pressing enter to start the game
+// - [x] space-ship entity logic
+// - [ ] centipede class for calculating new location based -> tick system based on current time and fixed velocity 
+// - [x] laser blast -> may want to 
 // - [ ] game window / screens
+//      -[ ] add in life counter that uses spaceship graphic
 // - [ ] ensure that every file has the assignment header at the top of it
-// - [ ]  
+// - [ ] ensure that every variable name and function is camel case
+// - [ ] make the spider die and respawn on kill
 #include <SFML/Graphics.hpp>
 #include <SFML/System/Clock.hpp>
 #include <GameLogicManager.hpp>

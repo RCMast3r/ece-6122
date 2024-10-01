@@ -29,7 +29,13 @@ add_executable(game
   src/StarShip.cpp
   src/ECE_LaserBlast.cpp
   src/Spider.cpp
+  src/ECE_Centipede.cpp
 )
+
+# add_executable(test
+#   src/testCode.cpp
+# )
+# target_link_libraries(test PUBLIC sfml-graphics)
 
 target_include_directories(game PRIVATE include)
 
