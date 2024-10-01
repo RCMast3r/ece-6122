@@ -5,51 +5,56 @@ Last Date Modified: 9.25/24
 Description: top-level main with run-time loop
 */
 
-#include <SFML/Audio.hpp>
+
+// game logic:
+// - grid of specific size: 27x27 pixels to fit grid of mushrooms 
+// - starts with 30 mushrooms in random areas
+// space-ship:
+// - can move around with arrow keys in limited area of the screen (bottom 1/3rd of the play window or so) with space to fire the laser
+// lives counter: 3 lives to start out with -> 
+// - when you collide with any part of the centipede you die
+// - when you collide with the spider, you die
+
+// centipede logic:
+// - centipede starts out as a head with 11 body sections
+// - when any section (body or head) of the centipede gets hit, it gets changed into a mushroom at that position
+// - if the head of the centipede gets hit, the next body section gets promoted to being the head of the centipede. 
+//    if the centipede has no body section it dissapears (still leaving a mushroom)
+// - 
+
+// TODOs:
+// - [ ] main start screen w/ pressing enter to start the game
+// - [ ] space-ship entity logic
+// - [ ] centipede class for calculating new location based -> tick system based on current time and fixed velocity
+// - [ ] 
+// - [ ] laser blast
+// - [ ] game tick / tick rate 
+// - [ ] game window / screens
+// - [ ] ensure that every file has the assignment header at the top of it
+// - [ ]  
 #include <SFML/Graphics.hpp>
- 
+#include <SFML/System/Clock.hpp>
+#include <GameLogicManager.hpp>
+
 int main()
 {
-    // Create the main window
-    sf::RenderWindow window(sf::VideoMode(800, 600), "SFML window");
- 
-    // Load a sprite to display
-    sf::Texture texture;
-    if (!texture.loadFromFile("assets/StarShip.png"))
+    bool startup_failed;
+    GameLogicManager game(startup_failed);
+    if(startup_failed)
         return EXIT_FAILURE;
-    sf::Sprite sprite(texture);
- 
-    // Create a graphical text to display
-    sf::Font font;
-    if (!font.loadFromFile("assets/arial.ttf"))
-        return EXIT_FAILURE;
-    sf::Text text("Hello SFML",font, 50);
- 
     
- 
+    
+    // Load a sprite to display
+
+    
+    // Create a graphical text to display
     // Start the game loop
-    while (window.isOpen())
+    sf::Clock clock;
+
+    while (game.alive())
     {
-        // Process events
-        sf::Event event;
-        while (window.pollEvent(event))
-        {
-            // Close window: exit
-            if (event.type == sf::Event::Closed)
-                window.close();
-        }
- 
-        // Clear screen
-        window.clear();
- 
-        // Draw the sprite
-        window.draw(sprite);
- 
-        // Draw the string
-        window.draw(text);
- 
-        // Update the window
-        window.display();
+        sf::Time elapsedTime = clock.restart();
+        game.tickGame(elapsedTime.asSeconds());
     }
  
     return EXIT_SUCCESS;

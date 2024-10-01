@@ -1,0 +1,5 @@
+#ifndef __SHAREDDATATYPES_H__
+#define __SHAREDDATATYPES_H__
+
+
+#endif // __SHAREDDATATYPES_H__

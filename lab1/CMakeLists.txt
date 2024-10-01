@@ -8,14 +8,29 @@ project(lab1 LANGUAGES CXX)
 # https://github.com/cpm-cmake/CPM.cmake
 include(cmake/CPM.cmake)
 
+# generates compile commands for use with vscode / IDEs to enable auto-complete
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# to turn off audio due to missing dependency on targets
+set(SFML_BUILD_AUDIO OFF)
+
+# better method to pull in upstream dependencies for local compilation / wrapper around fetchcontent feature within cmake
 CPMAddPackage(
   NAME SFML
   GITHUB_REPOSITORY SFML/SFML
   GIT_TAG 11b73743c42cf7ecd7c596ba83fdbf1150ffa96c
-  OPTIONS "SFML_BUILD_AUDIO=FALSE"
 )
 
-window.clear();
- 
-add_executable(game src/main.cpp)
+# basic executable compilation within cmake
+add_executable(game 
+  src/main.cpp
+  src/GameLogicManager.cpp
+  src/MushroomManager.cpp
+  src/StarShip.cpp
+  src/ECE_LaserBlast.cpp
+  src/Spider.cpp
+)
+
+target_include_directories(game PRIVATE include)
+
 target_link_libraries(game PUBLIC sfml-graphics)
