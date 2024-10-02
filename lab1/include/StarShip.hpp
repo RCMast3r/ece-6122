@@ -1,3 +1,10 @@
+/*
+Author: Ben Hall
+Class: ECE6122
+Last Date Modified: 9/30/24
+Description: Starship class for calculation of the state of the starship
+*/
+
 #ifndef __STARSHIP_H__
 #define __STARSHIP_H__
 
@@ -28,8 +35,8 @@ public:
         size_t liveCount;
     };
 
-    /// @brief
-    /// @param velocity
+    /// @brief constructor
+    /// @param velocity 
     /// @param construction_error
     /// @param assets_path
     explicit StarShip(unsigned int starshipWindowWidth, unsigned int starshipWindowHeight, unsigned int heightOffset, float velocity, bool &construction_error, std::string asset_path = "graphics/StarShip.png");
@@ -37,7 +44,7 @@ public:
     // delete the default constructor since we dont need it or what it to be a thing
     StarShip() = delete;
     // TODO pass in the states of the mushrooms to block movement into mushroom
-    void command(StarShipControlInput input, float deltaTime, Spider::SpiderState spiderState);
+    void command(StarShipControlInput input, float deltaTime, Spider::SpiderState spiderState, Spider &spider);
     StarShipState getCurrentState() { return _state; }
     void resetDeath()
     {

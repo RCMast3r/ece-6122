@@ -31,6 +31,7 @@ add_executable(game
   src/Spider.cpp
   src/ECE_Centipede.cpp
   src/CentipedeManager.cpp
+  src/GameUtils.cpp
 )
 
 # add_executable(test

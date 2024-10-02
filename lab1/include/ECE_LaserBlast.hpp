@@ -1,10 +1,18 @@
+/*
+Author: Ben Hall
+Class: ECE6122
+Last Date Modified: 9/30/24
+Description: required ECE_LaserBlast class description. Handles interaction with entities
+*/
 #ifndef __ECE_LASERBLAST_H__
 #define __ECE_LASERBLAST_H__
 
 #include <SFML/Graphics.hpp>
 #include <StarShip.hpp>
 #include <MushroomManager.hpp>
-// #include <ECE_centipede.hpp>
+#include <Spider.hpp>
+#include <GameUtils.hpp>
+#include <CentipedeManager.hpp>
 
 // requirements:
 // Create an ECE_LaserBlast class derived from the SFML::Sprite that calculates the
@@ -28,8 +36,7 @@ public:
         _vel = vel;
     }
 
-    // returns true if the
-    BlastState getState(float deltaTime, std::list<MushroomManager::MushroomState>& mushroomStates, std::vector<sf::Vector2f> centipedePositions, int& currentScore);
+    BlastState getState(float deltaTime, std::list<MushroomManager::MushroomState>& mushroomStates, CentipedeManager& centipede, Spider &spider, int& currentScore);
 
 private:
     BlastState _state;

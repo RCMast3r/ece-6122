@@ -30,7 +30,7 @@ StarShip::StarShip(unsigned int starshipWindowWidth, unsigned int starshipWindow
     construction_error = false;
 }
 
-void StarShip::command(StarShipControlInput input, float deltaTime, Spider::SpiderState spiderState)
+void StarShip::command(StarShipControlInput input, float deltaTime, Spider::SpiderState spiderState, Spider& spider)
 {
     float xMoveCmd = (float)(input.rightInput - input.leftInput) * 30.0;
     float yMoveCmd = (float)(input.downInput - input.upInput) * 30.0;
@@ -52,6 +52,7 @@ void StarShip::command(StarShipControlInput input, float deltaTime, Spider::Spid
         _state.liveCount--;
         
         _state.sprite.setPosition( { (float)(_windowWidth / 2), 500.0f });
+        spider.resetSpider();
     } else {
         _state.sprite.move({ xMoveCmd * deltaTime, yMoveCmd * deltaTime});
         _state.emitLaser = input.isFiring;

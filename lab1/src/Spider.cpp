@@ -14,10 +14,13 @@ Spider::Spider(unsigned int spiderWindowWidth, unsigned int spiderWindowHeight)
     _elapsedTime = 0;
 }
 
-
 void Spider::resetSpider()
 {
-    _state.sprite.setPosition( { 75, 300 });
+    std::random_device rd;  
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> xRand(0, 1);
+    auto randXStart = (xRand(gen)==1) ? 800.0f : 75.0f;
+    _state.sprite.setPosition( { (float)randXStart , 300.0f });
 }
 Spider::SpiderState Spider::getState(float deltaTime, std::list<MushroomManager::MushroomState>& mushroomStates)
 {

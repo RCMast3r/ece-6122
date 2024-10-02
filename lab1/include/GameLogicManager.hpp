@@ -32,6 +32,7 @@ class GameLogicManager
         GameLogicManager(bool &construction_failure);
         bool alive();
         void tickGame(float deltaTime);
+        void initLifeSprites();
     private:
         std::optional<StarShip::StarShipControlInput> _handleKeyPress(sf::Keyboard::Key keyPressCode);
         void _handleKeyRelease(sf::Keyboard::Key keyPressCode);
@@ -49,7 +50,9 @@ class GameLogicManager
         sf::Font _font;
         sf::Text _score;
         sf::Texture _startDisplay;
+        sf::Texture _lifeTexture;
         sf::Sprite _startDisplaySprite;
+        std::vector<sf::Sprite> _livesSprites;
         sf::RenderWindow _window;
         StarShip _starship;
         Spider _spider;

@@ -1,5 +1,0 @@
-#ifndef __GAMEWINDOWMANAGER_H__
-#define __GAMEWINDOWMANAGER_H__
-
-
-#endif // __GAMEWINDOWMANAGER_H__
