@@ -35,15 +35,21 @@ public:
         size_t liveCount;
     };
 
-    /// @brief constructor
-    /// @param velocity 
-    /// @param construction_error
-    /// @param assets_path
+    /// @brief constructor the starship class
+    /// @param velocity not a real argument
+    /// @param construction_error ref to bool for if the constructor fails on construction
+    /// @param assets_path path to the starship graphic
     explicit StarShip(unsigned int starshipWindowWidth, unsigned int starshipWindowHeight, unsigned int heightOffset, float velocity, bool &construction_error, std::string asset_path = "graphics/StarShip.png");
 
     // delete the default constructor since we dont need it or what it to be a thing
     StarShip() = delete;
     // TODO pass in the states of the mushrooms to block movement into mushroom
+
+    /// @brief handle command of the starship with external state to evaluate if the starship needs to lose a life
+    /// @param input 
+    /// @param deltaTime 
+    /// @param spiderState 
+    /// @param spider 
     void command(StarShipControlInput input, float deltaTime, Spider::SpiderState spiderState, Spider &spider);
     StarShipState getCurrentState() { return _state; }
     void resetDeath()

@@ -1,3 +1,10 @@
+/*
+Author: Ben Hall
+Class: ECE6122
+Last Date Modified: 9/30/24
+Description: cross-component utilities
+*/
+
 #include <GameUtils.hpp>
 
 #include <cmath>

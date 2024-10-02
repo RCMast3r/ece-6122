@@ -1,8 +1,16 @@
+/*
+Author: Ben Hall
+Class: ECE6122
+Last Date Modified: 9/30/24
+Description: laser blast logic and implementation
+*/
+
 #include <ECE_LaserBlast.hpp>
 #include <CentipedeManager.hpp>
 #include <cmath>
 #include <iostream>
 #include <GameUtils.hpp>
+
 ECE_LaserBlast::BlastState ECE_LaserBlast::getState(float deltaTime, std::list<MushroomManager::MushroomState>& mushroomStates, CentipedeManager& centipede, Spider& spider, int &currentScore)
 {
     move({0, -(_vel *deltaTime)} );

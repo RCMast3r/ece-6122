@@ -1,3 +1,10 @@
+/*
+Author: Ben Hall
+Class: ECE6122
+Last Date Modified: 9/30/24
+Description: main game logic handling. holds and handles the interaction between the game window and the entities within it
+*/
+
 #include <GameLogicManager.hpp>
 #include <iostream>
 #include <string> 
@@ -133,6 +140,7 @@ void GameLogicManager::_handleKeyRelease(sf::Keyboard::Key keyCode)
     }
 }
 
+
 void GameLogicManager::_drawGame()
 {
     // Clear screen
@@ -153,7 +161,7 @@ void GameLogicManager::_drawGame()
             _window.draw(life);
         }
         
-        if (starshipState.isDead) // dead meaning all lives lost
+        if (starshipState.isDead || _centipede.isDead()) // dead meaning all lives lost
         {
             _spider.resetSpider();
             _mushroomManager.resetAndGenerateMushrooms();
@@ -180,12 +188,6 @@ void GameLogicManager::_drawGame()
             
             // dealing with texture not popping up, memory bug 
             _centipede.drawOnWindow(_window);
-            
-            // for(auto segment : segmentsToDraw)
-            // {
-            //     _window.draw(*(sf::Sprite *)&segment);
-            // }
-            
         }
     }
     _window.display();
@@ -235,9 +237,10 @@ void GameLogicManager::tickGame(float deltaTime)
     if (_gameState == GameState::PLAYING)
     {
         auto spiderState = _spider.getState(deltaTime, mushroomStates);
-
         _starship.command(_gendInput, deltaTime, spiderState, _spider);
         _centipede.evaluateSegments({}, deltaTime);
+        
+
         std::vector<sf::Vector2f> mushroomPositions;
         for(const auto & state : mushroomStates)
         {
@@ -245,7 +248,7 @@ void GameLogicManager::tickGame(float deltaTime)
             mushroomPositions.push_back({(float)(state.x + 13), (float)(state.y+13)}); // fixed mushroom center pos
         }
         _centipede.evaluateMushroomLocations(mushroomPositions);
-        // _centipede.evaluateHeadPositions();
+        
     }
     
     _drawGame();

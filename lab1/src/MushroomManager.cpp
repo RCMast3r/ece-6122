@@ -1,7 +1,16 @@
+/*
+Author: Ben Hall
+Class: ECE6122
+Last Date Modified: 9/30/24
+Description: mushroom manager class implementation
+*/
+
 #include <MushroomManager.hpp>
 
 #include <random>
 #include <iostream>
+
+
 MushroomManager::MushroomManager(unsigned int mushroomAreaWidth, unsigned int mushroomAreaHeight, size_t numMushrooms, bool &construction_error)
 {
     _mushroomAreaWidth = mushroomAreaWidth;
@@ -29,11 +38,13 @@ void MushroomManager::resetAndGenerateMushrooms()
     {
         auto x = xDistribution(gen);
         auto y = yDistribution(gen);
-        std::cout << y <<std::endl;
+
         _states.push_back( {x * 27, y * 27, 0} );
     }
 }
 
+// this is what I would have preffered to do instead of deal with the derived 
+// classes from the Sprite as the memory is fairly hairy to deal with with the textures
 sf::Sprite MushroomManager::makeMushroomGraphic(MushroomManager::MushroomState state)
 {
     if(state.state == 1) {

@@ -1,7 +1,14 @@
+/*
+Author: Ben Hall
+Class: ECE6122
+Last Date Modified: 9/30/24
+Description: centipede segment logic implementation
+*/
+
 #include <ECE_Centipede.hpp>
 #include <iostream>
 #include <cmath>
-// #include <GameUtils.hpp>
+
 
 ECE_Centipede::ECE_Centipede(bool isHead) : _isHead(isHead)
 {

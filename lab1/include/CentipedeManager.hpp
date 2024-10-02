@@ -23,6 +23,7 @@ public:
     void evaluateMushroomLocations(std::vector<sf::Vector2f> mushroomPositions);
     void evaluateHeadPositions();
     void drawOnWindow(sf::RenderWindow & window);
+    bool isDead() {return _segments.empty(); }
 private:
     ECE_Centipede _body, _head;
     sf::Vector2f _normalize(sf::Vector2f v);

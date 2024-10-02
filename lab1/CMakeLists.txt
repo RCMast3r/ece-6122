@@ -34,10 +34,6 @@ add_executable(game
   src/GameUtils.cpp
 )
 
-# add_executable(test
-#   src/testCode.cpp
-# )
-# target_link_libraries(test PUBLIC sfml-graphics)
 
 target_include_directories(game PRIVATE include)
 
