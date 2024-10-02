@@ -60,12 +60,6 @@ bool GameLogicManager::alive()
     return _window.isOpen();
 }
 
-// TODO
-// void GameLogicManager::_drawLifeCount(size_t lives)
-// {
-
-// }
-
 std::optional<StarShip::StarShipControlInput> GameLogicManager::_handleKeyPress(sf::Keyboard::Key keyPressCode)
 {
     int desiredVelocity = 10; // TODO units
@@ -76,6 +70,7 @@ std::optional<StarShip::StarShipControlInput> GameLogicManager::_handleKeyPress(
         _gameState = GameState::PLAYING;
         _gendInput = {};
         _starship.resetDeath();
+        _currentScore = 0;
         return std::nullopt;
     }
 
