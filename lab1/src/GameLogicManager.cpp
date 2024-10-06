@@ -1,3 +1,10 @@
+/*
+Author: Ben Hall
+Class: ECE6122
+Last Date Modified: 9/30/24
+Description: main game logic handling. holds and handles the interaction between the game window and the entities within it
+*/
+
 #include <GameLogicManager.hpp>
 #include <iostream>
 #include <string> 
@@ -6,17 +13,21 @@
 GameLogicManager::GameLogicManager(bool &construction_failure) : _window(sf::VideoMode(1036, 570), "Centipede: the game"),
                                                                  _gameState(GameLogicManager::GameState::STARTUP),
                                                                  _starship(1036, 260, 310, 0.0, construction_failure),
-                                                                 _mushroomManager(1036, 380, 30, construction_failure),
+                                                                 _mushroomManager(1036, 30, 30, construction_failure),
                                                                  _spider(1036, 260)
 {
 
     _font.loadFromFile("graphics/arial.ttf");
-    
+    _lifeTexture.loadFromFile("graphics/StarShip.png");
+
     _score.setFont(_font);
     _score.setString(std::to_string(_currentScore));
     _score.setCharacterSize(30); 
     _score.setFillColor(sf::Color::White); 
-    _score.setPosition((1036/2), 15); 
+    _score.setPosition((1036/2), 15);
+
+    initLifeSprites();
+    
 
     if (!_startDisplay.loadFromFile("graphics/StartupScreenBackGround.png"))
     {
@@ -29,16 +40,25 @@ GameLogicManager::GameLogicManager(bool &construction_failure) : _window(sf::Vid
     
 };
 
+void GameLogicManager::initLifeSprites()
+{
+    sf::Sprite lifeSprite;
+    lifeSprite.setTexture(_lifeTexture);
+
+    float initXPos = 700;
+
+    for(int i =0; i< 3; i++)
+    {
+        lifeSprite.setPosition({initXPos, 20});
+        _livesSprites.push_back(lifeSprite);
+        initXPos += lifeSprite.getTexture()->getSize().x + 1;
+    }
+}
+
 bool GameLogicManager::alive()
 {
     return _window.isOpen();
 }
-
-// TODO
-// void GameLogicManager::_drawLifeCount(size_t lives)
-// {
-
-// }
 
 std::optional<StarShip::StarShipControlInput> GameLogicManager::_handleKeyPress(sf::Keyboard::Key keyPressCode)
 {
@@ -50,6 +70,7 @@ std::optional<StarShip::StarShipControlInput> GameLogicManager::_handleKeyPress(
         _gameState = GameState::PLAYING;
         _gendInput = {};
         _starship.resetDeath();
+        _currentScore = 0;
         return std::nullopt;
     }
 
@@ -114,12 +135,14 @@ void GameLogicManager::_handleKeyRelease(sf::Keyboard::Key keyCode)
     }
 }
 
+
 void GameLogicManager::_drawGame()
 {
     // Clear screen
     _window.clear();
     if (_gameState == GameState::STARTUP)
     {
+        
         _window.draw(_startDisplaySprite);
     }
     else // _gameState == GameState::PLAYING for now
@@ -127,10 +150,18 @@ void GameLogicManager::_drawGame()
         _score.setString(std::to_string(_currentScore));
         _window.draw(_score);
         auto starshipState = _starship.getCurrentState();
-
-        if (starshipState.isDead)
+        _livesSprites.resize(starshipState.liveCount);
+        for(const auto & life : _livesSprites)
+        {
+            _window.draw(life);
+        }
+        
+        if (starshipState.isDead || _centipede.isDead()) // dead meaning all lives lost
         {
             _spider.resetSpider();
+            _mushroomManager.resetAndGenerateMushrooms();
+            _centipede.initSegments();
+            initLifeSprites();
             _gameState = GameState::STARTUP;
         }
         else
@@ -149,12 +180,9 @@ void GameLogicManager::_drawGame()
                 _window.draw(*((sf::Sprite *)&laser));
             }
 
-            auto segmentsToDraw = _centipede.getSegments();
-            for(auto segment : segmentsToDraw)
-            {
-                _window.draw(*(sf::Sprite *)&segment);
-            }
             
+            // dealing with texture not popping up, memory bug 
+            _centipede.drawOnWindow(_window);
         }
     }
     _window.display();
@@ -191,9 +219,10 @@ void GameLogicManager::tickGame(float deltaTime)
         }
     }
     size_t ind = 0;
+    auto & mushroomStates = _mushroomManager.getMushroomStates();
     for (auto &laser : _lasers)
     {
-        auto state = laser.getState(deltaTime, _mushroomManager.getMushroomStates(), {}, _currentScore);
+        auto state = laser.getState(deltaTime, mushroomStates, _centipede, _spider, _currentScore);
         if (state.impacted)
         {
             _lasers.erase(_lasers.begin() + ind);
@@ -202,10 +231,19 @@ void GameLogicManager::tickGame(float deltaTime)
     }
     if (_gameState == GameState::PLAYING)
     {
-        auto spiderState = _spider.getState(deltaTime, _mushroomManager.getMushroomStates());
-
-        _starship.command(_gendInput, deltaTime, spiderState);
+        auto spiderState = _spider.getState(deltaTime, mushroomStates);
+        _starship.command(_gendInput, deltaTime, spiderState, _spider);
         _centipede.evaluateSegments({}, deltaTime);
+        
+
+        std::vector<sf::Vector2f> mushroomPositions;
+        for(const auto & state : mushroomStates)
+        {
+            
+            mushroomPositions.push_back({(float)(state.x + 13), (float)(state.y+13)}); // fixed mushroom center pos
+        }
+        _centipede.evaluateMushroomLocations(mushroomPositions);
+        
     }
     
     _drawGame();

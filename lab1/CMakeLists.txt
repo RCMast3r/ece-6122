@@ -31,12 +31,9 @@ add_executable(game
   src/Spider.cpp
   src/ECE_Centipede.cpp
   src/CentipedeManager.cpp
+  src/GameUtils.cpp
 )
 
-# add_executable(test
-#   src/testCode.cpp
-# )
-# target_link_libraries(test PUBLIC sfml-graphics)
 
 target_include_directories(game PRIVATE include)
 

@@ -1,3 +1,10 @@
+/*
+Author: Ben Hall
+Class: ECE6122
+Last Date Modified: 9/30/24
+Description: centipede manager header
+*/
+
 #ifndef __CENTIPEDEMANAGER_H__
 #define __CENTIPEDEMANAGER_H__
 
@@ -8,8 +15,15 @@ class CentipedeManager
 {
 public:
     CentipedeManager();
-    std::vector<ECE_Centipede> getSegments() {return _segments; } 
+    std::vector<ECE_Centipede>& getSegments() { return _segments; } 
+    void initSegments();
     void evaluateSegments(std::vector<sf::Vector2f> mushroomPositions, float deltaTime);
+    void handleSegmentImpact(size_t impactIndex);
+    bool evaluateLaser(sf::Vector2f laserPosition, int &currentScore);
+    void evaluateMushroomLocations(std::vector<sf::Vector2f> mushroomPositions);
+    void evaluateHeadPositions();
+    void drawOnWindow(sf::RenderWindow & window);
+    bool isDead() {return _segments.empty(); }
 private:
     ECE_Centipede _body, _head;
     sf::Vector2f _normalize(sf::Vector2f v);

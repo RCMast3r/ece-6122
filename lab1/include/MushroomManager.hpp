@@ -1,3 +1,10 @@
+/*
+Author: Ben Hall
+Class: ECE6122
+Last Date Modified: 9/30/24
+Description: mush creation and management class
+*/
+
 #ifndef __MUSHROOMMANAGER_H__
 #define __MUSHROOMMANAGER_H__
 
@@ -25,12 +32,16 @@ class MushroomManager
             unsigned int y;
             unsigned int state; // 0 = full health, 1 = degraded state
         };
-        
+        /// @brief constructor for the mushroom manager, mostly hard-coded values within here, had bugs with member-initializer list
+        /// @param construction_failure 
         MushroomManager(unsigned int mushroomAreaWidth, unsigned int mushroomAreaHeight, size_t numMushrooms, bool &construction_failure);
+        /// @brief get ref to list to be change-able
+        /// @return ref to list of mushroom states (decrement health)
         std::list<MushroomState>& getMushroomStates() {return _states; };
         sf::Sprite makeMushroomGraphic(MushroomState state);
-
+        void resetAndGenerateMushrooms();
     private:
+        unsigned int _mushroomAreaWidth, _mushroomAreaHeight;
         sf::Texture _commonFirstStageTexture;
         sf::Texture _commonSecondStageTexture;
         std::list<MushroomState> _states;
