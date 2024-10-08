@@ -39,6 +39,7 @@ int countNeighbors(const std::vector<std::vector<bool>> &grid, int x, int y)
     }
     return count;
 }
+
 void updateGrid(std::vector<std::vector<bool>> &grid,
                 std::vector<std::vector<bool>> &newGrid)
 {
@@ -86,23 +87,23 @@ int main()
                 window.close();
             }
         }
+        // every second time, we get update the current referrence 
+        // with the reference to the one that will be drawn. the refnext is ref to the
         if (count++ % 2)
         {
             refCurrent = grid_next;
             refNext = grid_current;
         }
-        else
-        {
-            refCurrent = grid_current;
-            refNext = grid_next;
-        }
-        updateGrid(grid_current, refNext);
+        
+        
+        updateGrid(refCurrent, refNext);
+        
         window.clear();
         for (int x = 0; x < GRID_WIDTH; ++x)
         {
             for (int y = 0; y < GRID_HEIGHT; ++y)
             {
-                if (refNext[x][y])
+                if (grid_next[x][y])
                 {
                     sf::RectangleShape cell(sf::Vector2f(PIXEL_SIZE, PIXEL_SIZE));
                     cell.setPosition(x * PIXEL_SIZE, y * PIXEL_SIZE);

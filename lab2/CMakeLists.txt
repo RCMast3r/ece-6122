@@ -27,3 +27,8 @@ CPMAddPackage(
 add_executable(samplecode src/SampleCode.cpp)
 
 target_link_libraries(samplecode PUBLIC sfml-graphics)
+
+add_executable(lab2 src/main.cpp)
+target_link_libraries(lab2 PUBLIC sfml-graphics)
+target_include_directories(lab2 PUBLIC include)
+
