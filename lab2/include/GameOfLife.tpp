@@ -3,7 +3,9 @@
 #include <iostream>
 
 template <const size_t gridWidth, const size_t gridHeight>
-GameOfLife<gridWidth, gridHeight>::GameOfLife()
+GameOfLife<gridWidth, gridHeight>::GameOfLife() :
+ _gridRef(_grid),
+ _prevGridRef(_prevGrid)
 {
     _grid = {false};
     _prevGrid = {false};
@@ -12,14 +14,17 @@ GameOfLife<gridWidth, gridHeight>::GameOfLife()
 }
 
 template <const std::size_t gridWidth, const std::size_t gridHeight>
-void GameOfLife<gridWidth, gridHeight>::_generateGrid(std::array<std::array<bool, gridWidth>, gridHeight> &grid)
+void GameOfLife<gridWidth, gridHeight>::_generateGrid(std::array<std::array<bool, gridHeight>, gridWidth> &grid)
 {
+    std::cout << "size x: "<< grid.size() <<" width: "<< gridWidth <<std::endl;
+    std::cout << "size y: "<< grid[0].size() <<" height: "<< gridHeight <<std::endl;
     std::srand(static_cast<unsigned>(std::time(nullptr)));
     for (std::size_t x = 0; x < gridWidth; ++x)
     {
         for (std::size_t y = 0; y < gridHeight; ++y)
         {
             auto test = std::rand() % 2;
+            
             grid[x][y] = (test == 0); // Randomly seed each pixel
         }
     }
@@ -29,7 +34,7 @@ void GameOfLife<gridWidth, gridHeight>::_generateGrid(std::array<std::array<bool
 
 template <const size_t gridWidth, const size_t gridHeight>
 template <int... I, int... J>
-int GameOfLife<gridWidth, gridHeight>::_countNeighbors(const std::array<std::array<bool, gridWidth>, gridHeight> &grid,
+int GameOfLife<gridWidth, gridHeight>::_countNeighbors(const std::array<std::array<bool, gridHeight>, gridWidth> &grid,
                                                        std::size_t gridXLoc,
                                                        std::size_t gridYLoc,
                                                        std::integer_sequence<int, I...>,
@@ -39,16 +44,8 @@ int GameOfLife<gridWidth, gridHeight>::_countNeighbors(const std::array<std::arr
 }
 
 template <const size_t gridWidth, const size_t gridHeight>
-std::array<std::array<bool, gridWidth>, gridHeight> &GameOfLife<gridWidth, gridHeight>::updateGrid()
+void GameOfLife<gridWidth, gridHeight>::updateGrid(std::array<std::array<bool, gridHeight>, gridWidth> &prevGrid, std::array<std::array<bool, gridHeight>, gridWidth> & grid)
 {
-    if(_count++ % 2)
-    {
-        _prevGridRef = _grid;
-        _gridRef = _prevGrid;
-    } else {
-        _prevGridRef = _prevGrid;
-        _gridRef = _grid; 
-    }
     
     for (int x = 0; x < gridWidth; ++x)
     {
@@ -56,24 +53,23 @@ std::array<std::array<bool, gridWidth>, gridHeight> &GameOfLife<gridWidth, gridH
         {
             auto w = std::make_integer_sequence<int, 3>();
             auto h = std::make_integer_sequence<int, 3>();
-            int neighbors = _countNeighbors(_prevGridRef, x, y, std::make_integer_sequence<int, 3>(), std::make_integer_sequence<int, 3>());
-            std::cout << neighbors <<std::endl;
-            if (_prevGridRef[x][y])
+            int neighbors = _countNeighbors(prevGrid, x, y, std::make_integer_sequence<int, 3>(), std::make_integer_sequence<int, 3>());
+            if (prevGrid[x][y])
             {
                 if (neighbors < 2 || neighbors > 3)
                 {
-                    _gridRef[x][y] = false; // Cell dies
+                    grid[x][y] = false; // Cell dies
                 }
             }
             else
             {
                 if (neighbors == 3)
                 {
-                    _gridRef[x][y] = true; // Cell becomes alive
+                    grid[x][y] = true; // Cell becomes alive
                 }
             }
         }
     }
     
-    return _grid;
+    // return _gridRef;
 }
