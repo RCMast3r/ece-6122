@@ -2,7 +2,7 @@
 #define __GAMEOFLIFE_H__
 #include <SFML/Graphics.hpp>
 
-#include <array>
+#include <vector>
 #include <cstddef>
 #include <cstdlib>
 #include <ctime>
@@ -10,44 +10,60 @@
 #include <thread>
 #include <barrier>
 #include <condition_variable>
-#include <iostream>
-
-template <const std::size_t gridWidth, const std::size_t gridHeight>
 class GameOfLife {
   public:
-    explicit GameOfLife(std::size_t numThreads);
+    explicit GameOfLife(std::size_t numThreads, std::size_t width,
+                        std::size_t height);
     void updateGrid();
 
-    std::pair<std::array<std::array<bool, gridHeight>, gridWidth> &,
-              std::array<std::array<bool, gridHeight>, gridWidth> &>
+    std::pair<std::vector<std::vector<bool>> &,
+              std::vector<std::vector<bool>> &>
     getRefs() {
         return {_prevGrid, _grid};
     }
     void init() {
 
         _generateGrid(_grid);
-        _prevGrid = _grid;
-        _gridRef = &_grid;
-        _prevGridRef = &_prevGrid;
+        for (int i = 0; (i < _numThreads); i++) {
+            _threads.push_back(
+                std::thread(&GameOfLife::_handleGridUpdate, this, i));
+        }
     }
     void updateGridThreaded();
 
     void updateGridOpenMPThreaded(std::size_t numThreads);
+
   private:
     void _onGridPopulation() {
         {
             std::unique_lock lk(_retMtx);
             _gridPopulated = true;
         }
-        _prevGrid = std::move(_grid);
+        if (_count++ % 2) {
+            _prevGridRef = _grid;
+            _gridRef = _prevGrid;
+        }
         _retCv.notify_all();
     }
-    void _generateGrid(std::array<std::array<bool, gridHeight>, gridWidth> &grid);
+    void _generateGrid(std::vector<std::vector<bool>> &grid);
     void _handleGridUpdate(int index);
-    int _countNeighbors(
-        const std::array<std::array<bool, gridHeight>, gridWidth> &grid,
-        std::size_t x, std::size_t y);
-
+    static inline int _countNeighbors(const std::vector<std::vector<bool>>& grid, 
+                                  std::size_t x, std::size_t y, 
+                                  std::size_t width, std::size_t height) {
+    int count = 0;
+    for (int dx = -1; dx <= 1; ++dx) {
+        size_t nx = (x + dx + width) % width;
+        const auto& row = grid[nx];  // Cache the row reference
+        for (int dy = -1; dy <= 1; ++dy) {
+            if (dx == 0 && dy == 0) continue;
+            size_t ny = (y + dy + height) % height;
+            count += row[ny];
+        }
+    }
+    return count;
+} 
+    int _countNeighborsOpenMP(const std::vector<std::vector<bool>> &grid,
+                              std::size_t x, std::size_t y);
   private:
     std::barrier<std::function<void()>> _threadSync;
     std::mutex _gridMtx, _retMtx;
@@ -55,12 +71,12 @@ class GameOfLife {
     bool _gridPopulated = false;
     bool _startPopulateGrid = false;
     uint64_t _count = 0;
-    std::size_t _numThreads;
+    std::size_t _numThreads, _gridWidth, _gridHeight;
     std::vector<std::thread> _threads;
-    std::array<std::array<bool, gridHeight>, gridWidth> *_gridRef;
-    std::array<std::array<bool, gridHeight>, gridWidth> *_prevGridRef;
-    std::array<std::array<bool, gridHeight>, gridWidth> _grid;
-    std::array<std::array<bool, gridHeight>, gridWidth> _prevGrid;
+    std::vector<std::vector<bool>> &_gridRef;
+    std::vector<std::vector<bool>> &_prevGridRef;
+    std::vector<std::vector<bool>> _grid;
+    std::vector<std::vector<bool>> _prevGrid;
     std::function<void(int &)> _countAdd;
 };
 

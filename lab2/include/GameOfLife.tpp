@@ -8,30 +8,29 @@
 #include <functional>
 #include <omp.h>
 
-template <const size_t gridWidth, const size_t gridHeight>
-GameOfLife<gridWidth, gridHeight>::GameOfLife(std::size_t numThreads)
-    : _threadSync(
-          numThreads, std::function<void()>([this]() { _onGridPopulation(); })) {
-    _grid.fill({});
-    _prevGrid.fill({});
-
+GameOfLife::GameOfLife(std::size_t numThreads, std::size_t width,
+                       std::size_t height)
+    : _threadSync(numThreads,
+                  std::function<void()>([this]() { _onGridPopulation(); })),
+      _grid(width, std::vector<bool>(height, false)),
+      _prevGrid(width, std::vector<bool>(height, false)), 
+      _prevGridRef(_prevGrid),
+      _gridRef(_grid) {
     _numThreads = numThreads;
-    for (int i = 0; i < numThreads; i++) {
-        _threads.push_back(std::thread(
-            &GameOfLife<gridWidth, gridHeight>::_handleGridUpdate, this, i));
-    }
+    // set the number of threads globally for openmp (only matters if running
+    // under openmp mode)
+    _gridWidth = _grid.size();
+    _gridHeight = _grid[0].size();
+
+    
 }
 
-template <const std::size_t gridWidth, const std::size_t gridHeight>
-void GameOfLife<gridWidth, gridHeight>::_generateGrid(
-    std::array<std::array<bool, gridHeight>, gridWidth> &grid) {
-    std::cout << "size x: " << grid.size() << " width: " << gridWidth
-              << std::endl;
-    std::cout << "size y: " << grid[0].size() << " height: " << gridHeight
-              << std::endl;
+void GameOfLife::_generateGrid(std::vector<std::vector<bool>> &grid) {
+    std::cout << " width: " << _gridWidth << std::endl;
+    std::cout << " height: " << _gridHeight << std::endl;
     std::srand(static_cast<unsigned>(std::time(nullptr)));
-    for (std::size_t x = 0; x < gridWidth; ++x) {
-        for (std::size_t y = 0; y < gridHeight; ++y) {
+    for (std::size_t x = 0; x < _gridWidth; ++x) {
+        for (std::size_t y = 0; y < _gridHeight; ++y) {
             auto test = std::rand() % 2;
 
             grid[x][y] = (test == 0); // Randomly seed each pixel
@@ -39,70 +38,75 @@ void GameOfLife<gridWidth, gridHeight>::_generateGrid(
     }
 }
 
-template <const size_t gridWidth, const size_t gridHeight>
-int GameOfLife<gridWidth, gridHeight>::_countNeighbors(
-    const std::array<std::array<bool, gridHeight>, gridWidth> &grid,
-    std::size_t x, std::size_t y) {
+int GameOfLife::_countNeighborsOpenMP(
+    const std::vector<std::vector<bool>> &grid, std::size_t x, std::size_t y) {
     int count = 0;
-    for (int dx = -1; dx <= 1; ++dx) {
-        for (int dy = -1; dy <= 1; ++dy) {
+    int dx = -1;
+    int dy = -1;
+#pragma omp parallel for
+    for (dx = -1; dx <= 1; ++dx) {
+#pragma omp parallel for reduction(+ : count)
+        for (dy = -1; dy <= 1; ++dy) {
             if (dx == 0 && dy == 0) {
                 continue;
             }
-            size_t nx = (x + dx + gridWidth) % gridWidth;
-            size_t ny = (y + dy + gridHeight) % gridHeight;
+            size_t nx = (x + dx + _gridWidth) % _gridWidth;
+            size_t ny = (y + dy + _gridHeight) % _gridHeight;
             count += grid[nx][ny];
         }
     }
     return count;
 }
 
-template <const size_t gridWidth, const size_t gridHeight>
-void GameOfLife<gridWidth, gridHeight>::updateGrid() {
+void GameOfLife::updateGrid() {
 
-    for (int x = 0; x < gridWidth; ++x) {
-        for (int y = 0; y < gridHeight; ++y) {
-            int neighbors = _countNeighbors(_prevGrid, x, y);
-            if (_prevGrid[x][y]) {
+    for (int x = 0; x < _gridWidth; ++x) {
+        for (int y = 0; y < _gridHeight; ++y) {
+            int neighbors = _countNeighbors(_prevGridRef, x, y, _gridWidth, _gridHeight);
+            // std::cout << "x " << x << std::endl;
+            // std::cout << "y " << y << std::endl;
+            if (_prevGridRef[x][y]) {
                 if (neighbors < 2 || neighbors > 3) {
-                    _grid[x][y] = false; // Cell dies
+                    _gridRef[x][y] = false; // Cell dies
                 }
             } else {
                 if (neighbors == 3) {
-                    _grid[x][y] = true; // Cell becomes alive
+                    _gridRef[x][y] = true; // Cell becomes alive
                 }
             }
         }
     }
-    if(_count++ %2)
-    {
-
-        _prevGrid = std::move(_grid);
+    if (_count++ % 2) {
+        _prevGridRef = _grid;
+        _gridRef = _prevGrid;
     }
+    // _prevGrid = std::move(_grid);
 }
 
-template <const size_t gridWidth, const size_t gridHeight>
-void GameOfLife<gridWidth, gridHeight>::_handleGridUpdate(int index) {
+void GameOfLife::_handleGridUpdate(int index) {
     int thisThreadIndex = index;
-    
-    auto verticalWidthSize = gridWidth / _numThreads;
-    // std::cout << verticalWidthSize<<std::endl; 
+
+    auto verticalWidthSize = _gridWidth / _numThreads;
     while (true) {
         {
             std::unique_lock lk(_gridMtx);
             _cv.wait(lk, [this] { return _startPopulateGrid; });
         }
+
+        auto prevGridBegin = _prevGridRef.begin();
+        auto gridBegin = _gridRef.begin();
+
         for (int x = 0; x < verticalWidthSize; ++x) {
             std::size_t x_loc = (verticalWidthSize * thisThreadIndex) + x;
-            for (int y = 0; y < gridHeight; ++y) {
-                int neighbors = _countNeighbors(_prevGrid, x_loc, y);
-                if (_prevGrid[x_loc][y]) {
+            for (int y = 0; y < _gridHeight; ++y) {
+                int neighbors = _countNeighbors(_prevGridRef, x_loc, y, _gridWidth, _gridHeight);
+                if (_prevGridRef[x_loc][y]) {
                     if (neighbors < 2 || neighbors > 3) {
-                        _grid[x_loc][y] = false; // Cell dies
+                        _gridRef[x_loc][y] = false; // Cell dies
                     }
                 } else {
                     if (neighbors == 3) {
-                        _grid[x_loc][y] = true; // Cell becomes alive
+                        _gridRef[x_loc][y] = true; // Cell becomes alive
                     }
                 }
             }
@@ -111,43 +115,46 @@ void GameOfLife<gridWidth, gridHeight>::_handleGridUpdate(int index) {
     }
 }
 
-template <const size_t gridWidth, const size_t gridHeight>
-void GameOfLife<gridWidth, gridHeight>::updateGridThreaded() {
+void GameOfLife::updateGridThreaded() {
     _gridPopulated = false;
 
     {
         std::unique_lock lk(_gridMtx);
         _startPopulateGrid = true;
     }
-
+    // std::cout <<"updating" <<std::endl;
     _cv.notify_all();
 
     {
         std::unique_lock lk(_retMtx);
         _retCv.wait(lk, [this] { return _gridPopulated; });
     }
+    
 }
 
-template <const size_t gridWidth, const size_t gridHeight>
-void GameOfLife<gridWidth, gridHeight>::updateGridOpenMPThreaded(std::size_t numThreads) {
+void GameOfLife::updateGridOpenMPThreaded(std::size_t numThreads) {
     int x, y;
     omp_set_dynamic(0);
-    omp_set_num_threads(numThreads);
-    #pragma omp parallel for
-    for (x = 0; x < gridWidth; ++x) {
-        #pragma omp parallel for
-        for (y = 0; y < gridHeight; ++y) {
-            int neighbors = _countNeighbors(_prevGrid, x, y);
-            if (_prevGrid[x][y]) {
+    omp_set_num_threads(8);
+#pragma omp parallel for num_threads(8)
+    for (x = 0; x < _gridWidth; ++x) {
+#pragma omp parallel for num_threads(1)
+        for (y = 0; y < _gridHeight; ++y) {
+            int neighbors = _countNeighbors(_prevGridRef, x, y, _gridWidth, _gridHeight);
+            if (_prevGridRef[x][y]) {
                 if (neighbors < 2 || neighbors > 3) {
-                    _grid[x][y] = false; // Cell dies
+                    _gridRef[x][y] = false; // Cell dies
                 }
             } else {
                 if (neighbors == 3) {
-                    _grid[x][y] = true; // Cell becomes alive
+                    _gridRef[x][y] = true; // Cell becomes alive
                 }
             }
         }
     }
-    _prevGrid = std::move(_grid);
+    if (_count++ % 2) {
+        _prevGridRef = _grid;
+        _gridRef = _prevGrid;
+    }
+    
 }

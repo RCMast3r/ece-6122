@@ -5,29 +5,50 @@
 #include <iostream>
 #include <string>
 
-const int windowWidth = 800;
-const int windowHeight = 600;
-int numThreads = 8;
-constexpr int cellSize = 5;
-
 std::string threadingHandler = "THRD";
-constexpr int gridWidth = windowWidth / cellSize;
-constexpr int gridHeight = windowHeight / cellSize;
-GameOfLife<gridWidth, gridHeight> game(1);
-std::array<std::array<bool, gridHeight>, gridWidth> grid, prevGrid;
-
 uint64_t count = 0;
 
-struct ProgramOptions
-{
-
+struct ProgramOptions {
+    int numThreads = 8;
+    int cellSize = 5;
+    int windowWidth = 800;
+    int windowHeight = 600;
+    std::string threadingModel = "THRD";
 };
 
-// void handleCMDArgs(std::string &threadingHandlerMode, int& cellSize, int& windowWidth, int& windowHeight)
+void handleCMDArgs(ProgramOptions &options, int argc, char *argv[]) {
 
-int main(int agrc, char *argv[]) {
-    auto &gridRef = grid;
-    auto &prevGridRef = prevGrid;
+    for (int i = 1; i < argc; i++) {
+        if ((std::string(argv[i]) == "-n") && ((i + 1) < argc)) {
+            options.numThreads = std::stoi(std::string(argv[i + 1]));
+            std::cout << options.numThreads << std::endl;
+        } else if ((std::string(argv[i]) == "-c") && ((i + 1) < argc)) {
+            options.cellSize = std::stoi(std::string(argv[i + 1]));
+            std::cout << options.cellSize << std::endl;
+        } else if ((std::string(argv[i]) == "-x") && ((i + 1) < argc)) {
+            options.windowWidth = std::stoi(std::string(argv[i + 1]));
+            std::cout << options.windowWidth << std::endl;
+        } else if ((std::string(argv[i]) == "-y") && ((i + 1) < argc)) {
+            options.windowHeight = std::stoi(std::string(argv[i + 1]));
+            std::cout << options.windowHeight << std::endl;
+        } else if ((std::string(argv[i]) == "-t") && ((i + 1) < argc)) {
+            options.threadingModel = std::string(argv[i + 1]);
+            std::cout << options.threadingModel << std::endl;
+        }
+    }
+}
+
+int main(int argc, char *argv[]) {
+    ProgramOptions options;
+    handleCMDArgs(options, argc, argv);
+    const int windowWidth = options.windowWidth;
+    const int windowHeight = options.windowHeight;
+
+    int numThreads = 8;
+    const int cellSize = 5;
+    const int gridWidth = windowWidth / cellSize;
+    const int gridHeight = windowHeight / cellSize;
+    GameOfLife game(8, gridWidth, gridHeight);
 
     sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight),
                             "Game of Life");
@@ -46,8 +67,8 @@ int main(int agrc, char *argv[]) {
         }
 
         auto start_time = std::chrono::high_resolution_clock::now();
-        game.updateGrid();
-        // game.updateGridThreaded();
+        // game.updateGrid();
+        game.updateGridThreaded();
         // game.updateGridOpenMPThreaded(8);
 
         auto end_time = std::chrono::high_resolution_clock::now();

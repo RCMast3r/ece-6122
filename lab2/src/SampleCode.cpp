@@ -110,10 +110,10 @@ int main()
         if(generationCount == 100)
         {
             std::cout << "100 generations took " << elapsedMicros << " microseconds with single thread DEMO." <<std::endl;
-            generationCount =0;
-            elapsedMicros =0;
+            generationCount = 0;
+            elapsedMicros = 0;
         } else {
-            elapsedMicros +=  std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+            elapsedMicros =  std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
         } 
 
         window.clear();
