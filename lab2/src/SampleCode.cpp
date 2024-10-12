@@ -4,6 +4,9 @@
 #include <cstdlib>
 #include <ctime>
 #include <utility>
+#include <chrono> // std::chrono::seconds
+#include <iostream>
+
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 600;
 const int PIXEL_SIZE = 5;
@@ -77,6 +80,9 @@ int main()
     std::vector<std::vector<bool>> &refCurrent = grid_current, &refNext = grid_next;
     seedRandomGrid(grid_current);
     unsigned long count = 0;
+
+    int generationCount = 0;
+    unsigned long elapsedMicros = 0;
     while (window.isOpen())
     {
         sf::Event event;
@@ -96,8 +102,20 @@ int main()
         }
         
         
+        auto start_time = std::chrono::high_resolution_clock::now();
         updateGrid(refCurrent, refNext);
-        
+        auto end_time = std::chrono::high_resolution_clock::now();
+
+        generationCount++;
+        if(generationCount == 100)
+        {
+            std::cout << "100 generations took " << elapsedMicros << " microseconds with single thread DEMO." <<std::endl;
+            generationCount =0;
+            elapsedMicros =0;
+        } else {
+            elapsedMicros +=  std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+        } 
+
         window.clear();
         for (int x = 0; x < GRID_WIDTH; ++x)
         {
