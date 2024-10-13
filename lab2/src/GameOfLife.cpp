@@ -19,11 +19,7 @@ GameOfLife::GameOfLife(int threadingModelIndex, std::size_t numThreads,
     _numThreads = numThreads;
     // set the number of threads globally for openmp (only matters if running
     // under openmp mode)
-    if (threadingModelIndex == 2) {
-
-        // omp_set_dynamic(0);
-        // omp_set_num_threads(numThreads);
-    }
+    
     _gridWidth = _grid.size();
     _gridHeight = _grid[0].size();
     _threadingModelIndex = threadingModelIndex;

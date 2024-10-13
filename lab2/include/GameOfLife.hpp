@@ -10,6 +10,7 @@
 #include <thread>
 #include <barrier>
 #include <condition_variable>
+#include <omp.h>
 class GameOfLife {
   public:
     explicit GameOfLife(int threadingModelIndex, std::size_t numThreads,
@@ -29,6 +30,9 @@ class GameOfLife {
                 _threads.push_back(
                     std::thread(&GameOfLife::_handleGridUpdate, this, i));
             }
+        } else if (_threadingModelIndex == 2) {
+            omp_set_dynamic(0);
+            omp_set_num_threads(_numThreads);
         }
     }
 
@@ -61,6 +65,8 @@ class GameOfLife {
             for (int dy = -1; dy <= 1; ++dy) {
                 if (dx == 0 && dy == 0) continue;
                 size_t ny = (y + dy + height) % height;
+
+                // #pragma omp critical
                 count += col[ny];
             }
         }
@@ -85,6 +91,5 @@ class GameOfLife {
     std::function<void(int &)> _countAdd;
     int _threadingModelIndex;
 };
-
 
 #endif // __GAMEOFLIFE_H__
