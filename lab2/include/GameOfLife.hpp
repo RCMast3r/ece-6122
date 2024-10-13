@@ -12,8 +12,8 @@
 #include <condition_variable>
 class GameOfLife {
   public:
-    explicit GameOfLife(std::size_t numThreads, std::size_t width,
-                        std::size_t height);
+    explicit GameOfLife(int threadingModelIndex, std::size_t numThreads,
+                        std::size_t width, std::size_t height);
     void updateGrid();
 
     std::pair<std::vector<std::vector<bool>> &,
@@ -24,16 +24,20 @@ class GameOfLife {
     void init() {
 
         _generateGrid(_grid);
-        for (int i = 0; (i < _numThreads); i++) {
-            _threads.push_back(
-                std::thread(&GameOfLife::_handleGridUpdate, this, i));
+        if (_threadingModelIndex == 1) {
+            for (int i = 0; (i < _numThreads); i++) {
+                _threads.push_back(
+                    std::thread(&GameOfLife::_handleGridUpdate, this, i));
+            }
         }
     }
-    void updateGridThreaded();
-
-    void updateGridOpenMPThreaded(std::size_t numThreads);
 
   private:
+    void _updateGridSEQ();
+    void _updateGridThreaded();
+
+    void _updateGridOpenMPThreaded(std::size_t numThreads);
+
     void _onGridPopulation() {
         {
             std::unique_lock lk(_retMtx);
@@ -47,23 +51,24 @@ class GameOfLife {
     }
     void _generateGrid(std::vector<std::vector<bool>> &grid);
     void _handleGridUpdate(int index);
-    static inline int _countNeighbors(const std::vector<std::vector<bool>>& grid, 
-                                  std::size_t x, std::size_t y, 
-                                  std::size_t width, std::size_t height) {
-    int count = 0;
-    for (int dx = -1; dx <= 1; ++dx) {
-        size_t nx = (x + dx + width) % width;
-        const auto& row = grid[nx];  // Cache the row reference
-        for (int dy = -1; dy <= 1; ++dy) {
-            if (dx == 0 && dy == 0) continue;
-            size_t ny = (y + dy + height) % height;
-            count += row[ny];
+    static inline int
+    _countNeighbors(const std::vector<std::vector<bool>> &grid, std::size_t x,
+                    std::size_t y, std::size_t width, std::size_t height) {
+        int count = 0;
+        for (int dx = -1; dx <= 1; ++dx) {
+            size_t nx = (x + dx + width) % width;
+            const auto &col = grid[nx]; // get the column once
+            for (int dy = -1; dy <= 1; ++dy) {
+                if (dx == 0 && dy == 0) continue;
+                size_t ny = (y + dy + height) % height;
+                count += col[ny];
+            }
         }
+        return count;
     }
-    return count;
-} 
     int _countNeighborsOpenMP(const std::vector<std::vector<bool>> &grid,
                               std::size_t x, std::size_t y);
+
   private:
     std::barrier<std::function<void()>> _threadSync;
     std::mutex _gridMtx, _retMtx;
@@ -78,6 +83,7 @@ class GameOfLife {
     std::vector<std::vector<bool>> _grid;
     std::vector<std::vector<bool>> _prevGrid;
     std::function<void(int &)> _countAdd;
+    int _threadingModelIndex;
 };
 
 #include "GameOfLife.tpp"

@@ -13,7 +13,7 @@ struct ProgramOptions {
     int cellSize = 5;
     int windowWidth = 800;
     int windowHeight = 600;
-    std::string threadingModel = "THRD";
+    int threadingModel = 1;
 };
 
 void handleCMDArgs(ProgramOptions &options, int argc, char *argv[]) {
@@ -32,8 +32,19 @@ void handleCMDArgs(ProgramOptions &options, int argc, char *argv[]) {
             options.windowHeight = std::stoi(std::string(argv[i + 1]));
             std::cout << options.windowHeight << std::endl;
         } else if ((std::string(argv[i]) == "-t") && ((i + 1) < argc)) {
-            options.threadingModel = std::string(argv[i + 1]);
-            std::cout << options.threadingModel << std::endl;
+            if (std::string(argv[i + 1]) == "SEQ") {
+                options.threadingModel = 0;
+            } else if (std::string(argv[i + 1]) == "THRD") {
+
+                options.threadingModel = 1;
+            } else if (std::string(argv[i + 1]) == "OMP") {
+
+                options.threadingModel = 2;
+            } else {
+                std::cout << "WARNING: threading model type unknown, "
+                             "defaulting to THRD"
+                          << std::endl;
+            }
         }
     }
 }
@@ -44,11 +55,12 @@ int main(int argc, char *argv[]) {
     const int windowWidth = options.windowWidth;
     const int windowHeight = options.windowHeight;
 
-    int numThreads = 8;
-    const int cellSize = 5;
+    int numThreads = options.numThreads;
+    const int cellSize = options.cellSize;
+
     const int gridWidth = windowWidth / cellSize;
     const int gridHeight = windowHeight / cellSize;
-    GameOfLife game(8, gridWidth, gridHeight);
+    GameOfLife game(options.threadingModel, numThreads, gridWidth, gridHeight);
 
     sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight),
                             "Game of Life");
@@ -67,15 +79,24 @@ int main(int argc, char *argv[]) {
         }
 
         auto start_time = std::chrono::high_resolution_clock::now();
-        // game.updateGrid();
-        game.updateGridThreaded();
-        // game.updateGridOpenMPThreaded(8);
+        game.updateGrid();
 
         auto end_time = std::chrono::high_resolution_clock::now();
         generationCount++;
         if (generationCount == 100) {
-            std::cout << "100 generations took " << elapsedMicros
-                      << " microseconds with single thread." << std::endl;
+            if (options.threadingModel == 0) {
+                std::cout << "100 generations took " << elapsedMicros
+                          << " microseconds with a single thread" << std::endl;
+            } else if (options.threadingModel == 1) {
+
+                std::cout << "100 generations took " << elapsedMicros
+                          << " microseconds with " << options.numThreads
+                          << " std::threads" << std::endl;
+            } else if (options.threadingModel == 2) {
+                std::cout << "100 generations took " << elapsedMicros
+                          << " microseconds with " << options.numThreads
+                          << " OMP threads" << std::endl;
+            }
             generationCount = 0;
             elapsedMicros = 0;
         } else {
@@ -85,12 +106,13 @@ int main(int argc, char *argv[]) {
                     .count();
         }
         window.clear();
+        auto size = options.cellSize;
         auto refs = game.getRefs();
         for (int x = 0; x < gridWidth; ++x) {
             for (int y = 0; y < gridHeight; ++y) {
                 if (refs.first[x][y]) {
-                    sf::RectangleShape cell(sf::Vector2f(5, 5));
-                    cell.setPosition(x * 5, y * 5);
+                    sf::RectangleShape cell(sf::Vector2f(size, size));
+                    cell.setPosition(x * size, y * size);
                     cell.setFillColor(sf::Color::White);
                     window.draw(cell);
                 }
