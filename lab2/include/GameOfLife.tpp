@@ -19,6 +19,8 @@ GameOfLife::GameOfLife(int threadingModelIndex, std::size_t numThreads,
     _numThreads = numThreads;
     // set the number of threads globally for openmp (only matters if running
     // under openmp mode)
+    omp_set_dynamic(0);
+    omp_set_num_threads(numThreads);
     _gridWidth = _grid.size();
     _gridHeight = _grid[0].size();
     _threadingModelIndex = threadingModelIndex;
@@ -164,11 +166,10 @@ void GameOfLife::_updateGridThreaded() {
 }
 
 void GameOfLife::_updateGridOpenMPThreaded(std::size_t numThreads) {
-    int x, y;
-    omp_set_dynamic(0);
-    omp_set_num_threads(numThreads);
-#pragma omp parallel for num_threads(numThreads)
+    
+#pragma omp parallel for 
     for (int x = 0; x < _gridWidth; ++x) {
+#pragma omp parallel for 
         for (int y = 0; y < _gridHeight; ++y) {
             int neighbors =
                 _countNeighbors(_prevGridRef, x, y, _gridWidth, _gridHeight);

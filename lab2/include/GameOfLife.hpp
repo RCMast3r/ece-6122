@@ -55,6 +55,7 @@ class GameOfLife {
     _countNeighbors(const std::vector<std::vector<bool>> &grid, std::size_t x,
                     std::size_t y, std::size_t width, std::size_t height) {
         int count = 0;
+#pragma omp parallel for 
         for (int dx = -1; dx <= 1; ++dx) {
             size_t nx = (x + dx + width) % width;
             const auto &col = grid[nx]; // get the column once
