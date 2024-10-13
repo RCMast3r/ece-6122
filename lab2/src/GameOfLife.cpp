@@ -19,7 +19,7 @@ GameOfLife::GameOfLife(int threadingModelIndex, std::size_t numThreads,
     _numThreads = numThreads;
     // set the number of threads globally for openmp (only matters if running
     // under openmp mode)
-    
+
     _gridWidth = _grid.size();
     _gridHeight = _grid[0].size();
     _threadingModelIndex = threadingModelIndex;
@@ -70,6 +70,7 @@ void GameOfLife::updateGrid() {
     }
     case 2: {
         _updateGridOpenMPThreaded(_numThreads);
+        
         break;
     }
     }
@@ -159,25 +160,21 @@ void GameOfLife::_updateGridThreaded() {
 }
 
 void GameOfLife::_updateGridOpenMPThreaded(std::size_t numThreads) {
-
-#pragma omp parallel for num_threads(numThreads)
+#pragma omp parallel for num_threads(numThreads) schedule(dynamic, 10)         \
+    collapse(2)
     for (int x = 0; x < _gridWidth; ++x) {
         for (int y = 0; y < _gridHeight; ++y) {
             int neighbors =
                 _countNeighbors(_prevGridRef, x, y, _gridWidth, _gridHeight);
             if (_prevGridRef[x][y]) {
-                if (neighbors < 2 || neighbors > 3) {
-                    _gridRef[x][y] = false; // Cell dies
-                }
+                _gridRef[x][y] = !(neighbors < 2 || neighbors > 3);
             } else {
-                if (neighbors == 3) {
-                    _gridRef[x][y] = true; // Cell becomes alive
-                }
+                _gridRef[x][y] = (neighbors == 3);
             }
         }
     }
     if (_count++ % 2) {
-        _prevGridRef = _grid;
-        _gridRef = _prevGrid;
-    }
+            _prevGridRef = _grid;
+            _gridRef = _prevGrid;
+        }
 }
