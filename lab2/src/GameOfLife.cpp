@@ -19,8 +19,11 @@ GameOfLife::GameOfLife(int threadingModelIndex, std::size_t numThreads,
     _numThreads = numThreads;
     // set the number of threads globally for openmp (only matters if running
     // under openmp mode)
-    omp_set_dynamic(0);
-    omp_set_num_threads(numThreads);
+    if (threadingModelIndex == 2) {
+
+        omp_set_dynamic(0);
+        omp_set_num_threads(numThreads);
+    }
     _gridWidth = _grid.size();
     _gridHeight = _grid[0].size();
     _threadingModelIndex = threadingModelIndex;
@@ -60,23 +63,19 @@ int GameOfLife::_countNeighborsOpenMP(
 }
 
 void GameOfLife::updateGrid() {
-    switch(_threadingModelIndex)
-    {
-        case 0:
-        {
-            _updateGridSEQ();
-            break;
-        }
-        case 1:
-        {
-            _updateGridThreaded();
-            break;
-        } 
-        case 2:
-        {
-            _updateGridOpenMPThreaded(_numThreads);
-            break;
-        }
+    switch (_threadingModelIndex) {
+    case 0: {
+        _updateGridSEQ();
+        break;
+    }
+    case 1: {
+        _updateGridThreaded();
+        break;
+    }
+    case 2: {
+        _updateGridOpenMPThreaded(_numThreads);
+        break;
+    }
     }
 }
 
@@ -109,15 +108,13 @@ void GameOfLife::_handleGridUpdate(int index) {
 
     auto verticalWidthSize = std::floor(_gridWidth / _numThreads);
 
-    
-
     auto startInd = (verticalWidthSize * thisThreadIndex);
 
-    // handle small last little bit that does not get updated. in the last thread 
-    // we need to increase the width size to get to the rest of the screen
-    if(thisThreadIndex == (_numThreads - 1))
-    {
-        verticalWidthSize = _gridWidth - startInd; 
+    // handle small last little bit that does not get updated. in the last
+    // thread we need to increase the width size to get to the rest of the
+    // screen
+    if (thisThreadIndex == (_numThreads - 1)) {
+        verticalWidthSize = _gridWidth - startInd;
     }
 
     while (true) {
@@ -128,7 +125,7 @@ void GameOfLife::_handleGridUpdate(int index) {
 
         auto prevGridBegin = _prevGridRef.begin();
         auto gridBegin = _gridRef.begin();
-        
+
         for (int x = 0; x < verticalWidthSize; ++x) {
             std::size_t x_loc = startInd + x;
             for (int y = 0; y < _gridHeight; ++y) {
@@ -166,10 +163,10 @@ void GameOfLife::_updateGridThreaded() {
 }
 
 void GameOfLife::_updateGridOpenMPThreaded(std::size_t numThreads) {
-    
-#pragma omp parallel for 
+
+#pragma omp parallel for
     for (int x = 0; x < _gridWidth; ++x) {
-#pragma omp parallel for 
+#pragma omp parallel for
         for (int y = 0; y < _gridHeight; ++y) {
             int neighbors =
                 _countNeighbors(_prevGridRef, x, y, _gridWidth, _gridHeight);
