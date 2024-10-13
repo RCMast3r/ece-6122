@@ -1,3 +1,9 @@
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 10/12/24
+Description: game of life header description. contains some function implementations as well for the simple functions.
+*/
 #ifndef __GAMEOFLIFE_H__
 #define __GAMEOFLIFE_H__
 #include <SFML/Graphics.hpp>
@@ -11,6 +17,8 @@
 #include <barrier>
 #include <condition_variable>
 #include <omp.h>
+
+/// @brief the class that contains all of the implementations of the different ways to update the game of life thread. also contains the grids themselves.
 class GameOfLife
 {
   public:
@@ -70,10 +78,11 @@ class GameOfLife
         }
         if (_count++ % 2)
         {
+            // switching the refs
             _prevGridRef = _grid;
             _gridRef = _prevGrid;
         }
-        _retCv.notify_all();
+        _retCv.notify_all(); // notify all the other threads that are waiting on this condition variable. should just be the main thread
     }
 
     /// @brief grid generator for randomizing grid initially
@@ -83,6 +92,14 @@ class GameOfLife
     /// @brief the grid updating function that gets run in the thread. has a while(true) loop for staying alive and waits on a condition variable to start
     /// @param index the index of this thread. gets used with the for statement to 
     void _handleGridUpdate(int index);
+
+    /// @brief static inlined function for counting the neighbors
+    /// @param grid the ref to the grid to check. will be the prevgridref
+    /// @param x the width to check 
+    /// @param y the height to check
+    /// @param width width of the grid itself
+    /// @param height height of the grid
+    /// @return neighbors that are alive around the desired coordinate
     static inline int
     _countNeighbors(const std::vector<std::vector<bool>> &grid, std::size_t x,
                     std::size_t y, std::size_t width, std::size_t height)
@@ -104,10 +121,10 @@ class GameOfLife
     }
 
   private:
-    std::barrier<std::function<void()>> _threadSync;
-    std::mutex _gridMtx, _retMtx;
+    std::barrier<std::function<void()>> _threadSync; // condition variable that gets setup during construction of the class 
+    std::mutex _gridMtx, _retMtx; // mutexs for the std::thread handler
     std::condition_variable _cv, _retCv;
-    bool _gridPopulated = false;
+    bool _gridPopulated = false; // start out un-populated and then 
     bool _startPopulateGrid = false;
     uint64_t _count = 0;
     std::size_t _numThreads, _gridWidth, _gridHeight;

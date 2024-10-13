@@ -1,16 +1,17 @@
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 10/12/24
+Description: implementation of the game of life class source file 
+*/
+
 #include <GameOfLife.hpp>
-#include <algorithm>
-#include <iostream>
-#include <shared_mutex>
-#include <syncstream>
-#include <barrier>
-#include <thread>
-#include <functional>
 #include <omp.h>
 #include <cmath>
 
+// has member initializer lists for construction on creation
 GameOfLife::GameOfLife(int threadingModelIndex, std::size_t numThreads,
-                       std::size_t width, std::size_t height)
+                       std::size_t width, std::size_t height) 
     : _threadSync(numThreads,
                   std::function<void()>([this]() { _onGridPopulation(); })),
       _grid(width, std::vector<bool>(height, false)),
@@ -28,8 +29,8 @@ GameOfLife::GameOfLife(int threadingModelIndex, std::size_t numThreads,
 
 void GameOfLife::_generateGrid(std::vector<std::vector<bool>> &grid)
 {
-    std::cout << " width: " << _gridWidth << std::endl;
-    std::cout << " height: " << _gridHeight << std::endl;
+    // std::cout << " width: " << _gridWidth << std::endl;
+    // std::cout << " height: " << _gridHeight << std::endl;
     std::srand(static_cast<unsigned>(std::time(nullptr)));
     for (std::size_t x = 0; x < _gridWidth; ++x)
     {
@@ -145,7 +146,8 @@ void GameOfLife::_handleGridUpdate(int index)
                 }
             }
         }
-        // use the std::barrier synchronization primitive. this gets called only once after all threads have finished
+        // use the std::barrier synchronization primitive. this gets called only
+        // once after all threads have finished
         _threadSync.arrive_and_wait();
     }
 }
@@ -169,40 +171,43 @@ void GameOfLife::_updateGridThreaded()
 
 void GameOfLife::_updateGridOpenMPThreaded(std::size_t numThreads)
 {
-int startInd, verticalWidthSize;
-#pragma omp parallel num_threads(numThreads) private(startInd, verticalWidthSize)
+    int startInd, verticalWidthSize;
+#pragma omp parallel num_threads(numThreads) private(startInd,                 \
+                                                         verticalWidthSize)
     {
-    int thisThreadIndex = omp_get_thread_num();  // the thread index
-    verticalWidthSize = std::ceil(_gridWidth / numThreads);
-    startInd = (verticalWidthSize * thisThreadIndex);
-    if (thisThreadIndex == (numThreads - 1))
-    {
-        verticalWidthSize = _gridWidth - startInd;
-    }
-#pragma omp parallel for
-    for (int x = 0; x < (int)verticalWidthSize; ++x)
-    {
-        std::size_t x_loc = startInd + x; // just like in the std::thread one
-        for (int y = 0; y < _gridHeight; ++y)
+        int thisThreadIndex = omp_get_thread_num(); // the thread index
+        verticalWidthSize = std::ceil(_gridWidth / numThreads);
+        startInd = (verticalWidthSize * thisThreadIndex);
+        if (thisThreadIndex == (numThreads - 1))
         {
-            int neighbors = _countNeighbors(_prevGridRef, x_loc, y, _gridWidth, _gridHeight);
-            if (_prevGridRef[x_loc][y])
+            verticalWidthSize = _gridWidth - startInd;
+        }
+#pragma omp parallel for
+        for (int x = 0; x < (int)verticalWidthSize; ++x)
+        {
+            std::size_t x_loc =
+                startInd + x; // just like in the std::thread one
+            for (int y = 0; y < _gridHeight; ++y)
             {
-                if (neighbors < 2 || neighbors > 3)
+                int neighbors = _countNeighbors(_prevGridRef, x_loc, y,
+                                                _gridWidth, _gridHeight);
+                if (_prevGridRef[x_loc][y])
                 {
-                    _gridRef[x_loc][y] = false; // Cell dies
+                    if (neighbors < 2 || neighbors > 3)
+                    {
+                        _gridRef[x_loc][y] = false; // Cell dies
+                    }
                 }
-            }
-            else
-            {
-                if (neighbors == 3)
+                else
                 {
-                    _gridRef[x_loc][y] = true; // Cell becomes alive
+                    if (neighbors == 3)
+                    {
+                        _gridRef[x_loc][y] = true; // Cell becomes alive
+                    }
                 }
             }
         }
     }
-}
     if (_count++ % 2)
     {
         _prevGridRef = _grid;
