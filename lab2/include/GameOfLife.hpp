@@ -31,8 +31,8 @@ class GameOfLife {
                     std::thread(&GameOfLife::_handleGridUpdate, this, i));
             }
         } else if (_threadingModelIndex == 2) {
-            omp_set_dynamic(0);
-            omp_set_num_threads(_numThreads);
+            // omp_set_dynamic(0);
+            // omp_set_num_threads(_numThreads);
         }
     }
 
@@ -66,15 +66,11 @@ class GameOfLife {
                 if (dx == 0 && dy == 0) continue;
                 size_t ny = (y + dy + height) % height;
 
-                // #pragma omp critical
                 count += col[ny];
             }
         }
         return count;
     }
-    int _countNeighborsOpenMP(const std::vector<std::vector<bool>> &grid,
-                              std::size_t x, std::size_t y);
-
   private:
     std::barrier<std::function<void()>> _threadSync;
     std::mutex _gridMtx, _retMtx;

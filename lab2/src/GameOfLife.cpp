@@ -38,26 +38,6 @@ void GameOfLife::_generateGrid(std::vector<std::vector<bool>> &grid) {
     }
 }
 
-int GameOfLife::_countNeighborsOpenMP(
-    const std::vector<std::vector<bool>> &grid, std::size_t x, std::size_t y) {
-    int count = 0;
-    int dx = -1;
-    int dy = -1;
-#pragma omp parallel for
-    for (dx = -1; dx <= 1; ++dx) {
-#pragma omp parallel for reduction(+ : count)
-        for (dy = -1; dy <= 1; ++dy) {
-            if (dx == 0 && dy == 0) {
-                continue;
-            }
-            size_t nx = (x + dx + _gridWidth) % _gridWidth;
-            size_t ny = (y + dy + _gridHeight) % _gridHeight;
-            count += grid[nx][ny];
-        }
-    }
-    return count;
-}
-
 void GameOfLife::updateGrid() {
     switch (_threadingModelIndex) {
     case 0: {
@@ -160,21 +140,28 @@ void GameOfLife::_updateGridThreaded() {
 }
 
 void GameOfLife::_updateGridOpenMPThreaded(std::size_t numThreads) {
-#pragma omp parallel for num_threads(numThreads) schedule(dynamic, 10)         \
-    collapse(2)
-    for (int x = 0; x < _gridWidth; ++x) {
+    int x;
+    #pragma omp parallel for num_threads(numThreads)
+       for (x = 0; x < _gridWidth; ++x) {
         for (int y = 0; y < _gridHeight; ++y) {
             int neighbors =
                 _countNeighbors(_prevGridRef, x, y, _gridWidth, _gridHeight);
+            // std::cout << "x " << x << std::endl;
+            // std::cout << "y " << y << std::endl;
             if (_prevGridRef[x][y]) {
-                _gridRef[x][y] = !(neighbors < 2 || neighbors > 3);
+                if (neighbors < 2 || neighbors > 3) {
+                    _gridRef[x][y] = false; // Cell dies
+                }
             } else {
-                _gridRef[x][y] = (neighbors == 3);
+                if (neighbors == 3) {
+                    _gridRef[x][y] = true; // Cell becomes alive
+                }
             }
         }
     }
     if (_count++ % 2) {
-            _prevGridRef = _grid;
-            _gridRef = _prevGrid;
-        }
+        _prevGridRef = _grid;
+        _gridRef = _prevGrid;
+    } 
+        
 }
