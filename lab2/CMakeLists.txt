@@ -30,7 +30,7 @@ add_executable(samplecode src/SampleCode.cpp)
 target_link_libraries(samplecode PUBLIC sfml-graphics)
 
 
-add_executable(lab2 src/main.cpp)
+add_executable(lab2 src/main.cpp src/GameOfLife.cpp)
 target_compile_features(lab2 PUBLIC cxx_std_20)
 target_link_libraries(lab2 PUBLIC sfml-graphics OpenMP::OpenMP_CXX)
 target_include_directories(lab2 PUBLIC include)
