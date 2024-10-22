@@ -1,0 +1,1 @@
+sudo dnf install glfw glfw-devel mesa-libGL mesa-libGL-devel glm glm-devel
