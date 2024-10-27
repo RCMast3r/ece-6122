@@ -11,7 +11,7 @@ include(cmake/CPM.cmake)
 
 # generates compile commands for use with vscode / IDEs to enable auto-complete
 # set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
+set(CMAKE_EXPORT_COMPILES_COMMANDS ON)
 set(OpenGL_GL_PREFERENCE GLVND)
 
 find_package(OpenGL REQUIRED)
@@ -19,9 +19,9 @@ find_package(glm REQUIRED CONFIG)
 find_package(GLEW REQUIRED)
 # GLFW
 find_package(glfw3 REQUIRED CONFIG)
-
-
-add_executable(lab3 src/test.cpp)
+find_package(tinyobjloader REQUIRED CONFIG)
+add_executable(lab3 src/test.cpp src/shader.cpp src/controls.cpp src/objloader.cpp src/texture.cpp src/vboindexer.cpp)
 target_compile_features(lab3 PUBLIC cxx_std_20)
-target_link_libraries(lab3 PUBLIC glfw glm::glm GLEW::GLEW OpenGL::OpenGL)
+target_link_libraries(lab3 PUBLIC glfw glm::glm GLEW::GLEW OpenGL::OpenGL tinyobjloader)
 
+target_include_directories(lab3 PUBLIC include)
