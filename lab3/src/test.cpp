@@ -18,6 +18,33 @@ using namespace glm;
 #include <texture.hpp>
 #include <controls.hpp>
 #include <objloader.hpp>
+// #include <tiny_obj_loader.h>
+
+void renderObject(const std::vector<glm::vec3>& vertices, 
+                  const std::vector<glm::vec2>& uvs, 
+                  const std::vector<glm::vec3>& normals, 
+                  GLuint textureID) {
+    // Bind the object's texture
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    // Enable vertex attributes and bind buffers (pseudo-code, adapt to your buffer setup)
+    glEnableVertexAttribArray(0); // Position
+    glEnableVertexAttribArray(1); // UV
+    glEnableVertexAttribArray(2); // Normal
+
+    // Upload data (assuming VAO and VBOs are already bound)
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, &vertices[0]);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, &uvs[0]);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, &normals[0]);
+
+    // Draw the object
+    glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+
+    // Disable vertex attributes
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
+}
 
 int main( void )
 {
@@ -79,23 +106,32 @@ int main( void )
 	glBindVertexArray(VertexArrayID);
 
 	// Create and compile our GLSL program from the shaders
-	GLuint programID = LoadShaders( "data/StandardShading.vertexshader", "data/StandardShading.fragmentshader" );
+	GLuint programID = LoadShaders( "../StandardShading.vertexshader", "../StandardShading.fragmentshader" );
 
 	// Get a handle for our "MVP" uniform
 	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
-
+	GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
+	GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
 	// Load the texture
-	GLuint Texture = loadDDS("data/uvmap.DDS");
+	// GLuint Texture = loadDDS("data/uvmap.DDS");
+
+	
 	
 	// Get a handle for our "myTextureSampler" uniform
-	GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
+	// GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
 
 	// Read our .obj file
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec2> uvs;
-	std::vector<glm::vec3> normals; // Won't be used at the moment.
-	bool res = loadOBJ("data/Chess/chess3.obj", vertices, uvs, normals);
-
+	std::vector<glm::vec3> normals; 
+	std::vector<tinyobj::material_t> mats;
+	std::vector<std::string> texture_files;
+	bool res = loadOBJ("chess3.obj", vertices, uvs, normals, mats, texture_files);
+	
+	std::vector<GLuint> textures;
+    for (const auto& tex_file : texture_files) {
+        textures.push_back(loadBMP_custom(tex_file.c_str()));  // Load texture
+    }
 	// Load it into a VBO
 
 	GLuint vertexbuffer;
@@ -107,6 +143,15 @@ int main( void )
 	glGenBuffers(1, &uvbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
 	glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
+	
+	GLuint normalbuffer;
+	glGenBuffers(1, &normalbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+
+	// Get a handle for our "LightPosition" uniform
+	glUseProgram(programID);
+	GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
 	do{
 
@@ -126,12 +171,17 @@ int main( void )
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
 		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+		glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
+		glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
+
+		glm::vec3 lightPos = glm::vec3(4,4,4);
+		glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
 		// Bind our texture in Texture Unit 0
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, Texture);
+		// glActiveTexture(GL_TEXTURE0);
+		// glBindTexture(GL_TEXTURE_2D, Texture);
 		// Set our "myTextureSampler" sampler to use Texture Unit 0
-		glUniform1i(TextureID, 0);
+		// glUniform1i(TextureID, 0);
 
 		// 1rst attribute buffer : vertices
 		glEnableVertexAttribArray(0);
@@ -156,11 +206,31 @@ int main( void )
 			0,                                // stride
 			(void*)0                          // array buffer offset
 		);
+		// 3rd attribute buffer : normals
+		glEnableVertexAttribArray(2);
+		glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+		glVertexAttribPointer(
+			2,                                // attribute
+			3,                                // size
+			GL_FLOAT,                         // type
+			GL_FALSE,                         // normalized?
+			0,                                // stride
+			(void*)0                          // array buffer offset
+		);
 
-		glDrawArrays(GL_TRIANGLES, 0, vertices.size() );
+		for (size_t i = 0; i < textures.size(); ++i) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textures[i]);
 
+            // Set texture uniform
+            // GLuint TextureID = glGetUniformLocation(programID, "myTextureSampler");
+            // glUniform1i(TextureID, 0);
+
+            glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+        }
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
+		glDisableVertexAttribArray(2);
 
 		// Swap buffers
 		glfwSwapBuffers(window);
@@ -173,10 +243,11 @@ int main( void )
 	// Cleanup VBO and shader
 	glDeleteBuffers(1, &vertexbuffer);
 	glDeleteBuffers(1, &uvbuffer);
+	glDeleteBuffers(1, &normalbuffer);
 	glDeleteProgram(programID);
-	glDeleteTextures(1, &Texture);
+	// glDeleteTextures(1, &Texture);
 	glDeleteVertexArrays(1, &VertexArrayID);
-
+	for (auto tex : textures) glDeleteTextures(1, &tex);
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
 

@@ -9,6 +9,11 @@ project(lab3 LANGUAGES CXX)
 # https://github.com/cpm-cmake/CPM.cmake
 include(cmake/CPM.cmake)
 
+CPMAddPackage(
+  NAME tinyobjloader
+  URL https://github.com/tinyobjloader/tinyobjloader/archive/refs/tags/v2.0.0rc13.tar.gz
+)
+
 # generates compile commands for use with vscode / IDEs to enable auto-complete
 # set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_EXPORT_COMPILES_COMMANDS ON)
@@ -19,8 +24,15 @@ find_package(glm REQUIRED CONFIG)
 find_package(GLEW REQUIRED)
 # GLFW
 find_package(glfw3 REQUIRED CONFIG)
-find_package(tinyobjloader REQUIRED CONFIG)
-add_executable(lab3 src/test.cpp src/shader.cpp src/controls.cpp src/objloader.cpp src/texture.cpp src/vboindexer.cpp)
+# find_package(tinyobjloader CONFIG)
+add_executable(lab3 src/test.cpp 
+  src/shader.cpp 
+  src/controls.cpp 
+  src/objloader.cpp
+  src/texture.cpp
+  src/vboindexer.cpp
+  src/transform.cpp
+  )
 target_compile_features(lab3 PUBLIC cxx_std_20)
 target_link_libraries(lab3 PUBLIC glfw glm::glm GLEW::GLEW OpenGL::OpenGL tinyobjloader)
 

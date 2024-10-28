@@ -124,6 +124,7 @@ GLuint loadBMP_custom(const char * imagepath){
 #define FOURCC_DXT3 0x33545844 // Equivalent to "DXT3" in ASCII
 #define FOURCC_DXT5 0x35545844 // Equivalent to "DXT5" in ASCII
 
+
 GLuint loadDDS(const char * imagepath){
 
 	unsigned char header[124];
@@ -216,3 +217,4 @@ GLuint loadDDS(const char * imagepath){
 
 
 }
+
