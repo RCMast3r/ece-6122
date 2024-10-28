@@ -14,6 +14,7 @@ CPMAddPackage(
   URL https://github.com/tinyobjloader/tinyobjloader/archive/refs/tags/v2.0.0rc13.tar.gz
 )
 
+set(GLM_BUILD_LIBRARY ON)
 CPMAddPackage(
   NAME glm
   URL https://github.com/g-truc/glm/releases/download/1.0.1/glm-1.0.1-light.zip 
