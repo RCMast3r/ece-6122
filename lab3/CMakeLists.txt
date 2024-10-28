@@ -47,6 +47,6 @@ add_executable(lab3 src/test.cpp
   src/transform.cpp
   )
 target_compile_features(lab3 PUBLIC cxx_std_20)
-target_link_libraries(lab3 PUBLIC glfw glm::glm-header-only GLEW::GLEW OpenGL::OpenGL tinyobjloader)
-
+target_link_libraries(lab3 PUBLIC glfw GLEW::GLEW OpenGL::OpenGL tinyobjloader)
+target_link_libraries(lab3 INTERFACE glm::glm-header-only)
 target_include_directories(lab3 PUBLIC include)
