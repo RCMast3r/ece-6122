@@ -14,7 +14,7 @@ CPMAddPackage(
   URL https://github.com/tinyobjloader/tinyobjloader/archive/refs/tags/v2.0.0rc13.tar.gz
 )
 
-set(GLM_BUILD_LIBRARY ON)
+# set(GLM_BUILD_LIBRARY ON)
 CPMAddPackage(
   NAME glm
   URL https://github.com/g-truc/glm/releases/download/1.0.1/glm-1.0.1-light.zip 
@@ -47,6 +47,6 @@ add_executable(lab3 src/test.cpp
   src/transform.cpp
   )
 target_compile_features(lab3 PUBLIC cxx_std_20)
-target_link_libraries(lab3 PUBLIC glfw glm::glm GLEW::GLEW OpenGL::OpenGL tinyobjloader)
+target_link_libraries(lab3 PUBLIC glfw glm::glm-header-only GLEW::GLEW OpenGL::OpenGL tinyobjloader)
 
 target_include_directories(lab3 PUBLIC include)
