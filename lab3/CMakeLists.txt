@@ -18,18 +18,22 @@ CPMAddPackage(
   NAME glm
   URL https://github.com/g-truc/glm/releases/download/1.0.1/glm-1.0.1-light.zip 
 )
-
+set(OpenGL_GL_PREFERENCE GLVND)
+CPMAddPackage(
+  NAME glfw3
+  URL https://github.com/glfw/glfw/archive/refs/tags/3.4.tar.gz
+)
 
 # generates compile commands for use with vscode / IDEs to enable auto-complete
 # set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_EXPORT_COMPILES_COMMANDS ON)
-set(OpenGL_GL_PREFERENCE GLVND)
+
 
 find_package(OpenGL REQUIRED)
 # find_package(glm REQUIRED CONFIG)
 find_package(GLEW REQUIRED)
 # GLFW
-find_package(glfw3 REQUIRED CONFIG)
+# find_package(glfw3 REQUIRED CONFIG)
 # find_package(tinyobjloader CONFIG)
 add_executable(lab3 src/test.cpp 
   src/shader.cpp 
