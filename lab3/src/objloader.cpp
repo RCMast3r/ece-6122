@@ -8,6 +8,32 @@
 
 #include <objloader.hpp>
 #include <transform.hpp>
+#include <map>
+#include <texture.hpp>
+
+std::map<std::string, GLuint> textureCache;
+
+GLuint getTextureID(const std::string& texturePath) {
+    // Check if the texture is already loaded
+    if (textureCache.find(texturePath) != textureCache.end()) {
+        return textureCache[texturePath];
+    }
+
+    // Load the texture
+    GLuint textureID;
+    if (texturePath.find(".bmp") != std::string::npos) {
+        textureID = loadBMP_custom((std::string("data/")+ texturePath).c_str());
+    } else if (texturePath.find(".dds") != std::string::npos) {
+        textureID = loadDDS(texturePath.c_str());
+    } else {
+        std::cerr << "Unsupported texture format: " << texturePath << std::endl;
+        return 0;
+    }
+
+    textureCache[texturePath] = textureID; // Cache it
+    return textureID;
+}
+
 
 bool loadOBJ(
     const char* path,
@@ -16,7 +42,8 @@ bool loadOBJ(
     std::vector<glm::vec3>& out_normals,
     std::vector<tinyobj::material_t>& out_materials,
     std::vector<std::string>& texture_files, // Store texture paths
-    std::vector<GLuint>& textureIDs
+    std::vector<GLuint>& textureIDs,
+    bool isLoadingBoard
 ) {
     printf("Loading OBJ file %s...\n", path);
 
@@ -39,11 +66,18 @@ bool loadOBJ(
     out_materials = materials; // Store loaded materials
 
     // Example: Create a transformation matrix (scaling + rotation + translation)
-    glm::mat4 transform = glm::mat4(1.0f);
-    transform = glm::rotate(transform, glm::radians(45.0f), glm::vec3(0, 1, 0));
-    transform = glm::translate(transform, glm::vec3(1.0f, 0.0f, 0.0f));
-
-    transformMeshAttributes(attrib, shapes[0].mesh, transform, 1, {1.0, 1.0});
+    if(!isLoadingBoard)
+    {
+        glm::mat4 transform = glm::mat4(1.0f);
+        transform = glm::rotate(transform, glm::radians(45.0f), glm::vec3(0, 1, 0));
+        transform = glm::translate(transform, glm::vec3(1.0f, 0.0f, 0.0f));
+        transformMeshAttributes(attrib, shapes[0].mesh, transform, 1, {1.0, 1.0});
+    } else {
+        glm::mat4 transform = glm::mat4(1.0f);
+        transform = glm::rotate(transform, glm::radians(270.0f), glm::vec3(1, 0, 0));
+        transform = glm::translate(transform, glm::vec3(10000.0f, 3000.0f, 4000.0f));
+        transformMeshAttributes(attrib, shapes[0].mesh, transform, 1, {1.0, 1.0});       
+    }
 
     // Iterate over shapes and extract vertex data
     for (const auto& shape : shapes) {
@@ -88,33 +122,53 @@ bool loadOBJ(
     // Collect texture file paths from materials
     for (const auto& material : materials) {
         if (!material.diffuse_texname.empty()) {
-            std::string texture_path = material.diffuse_texname;
+            std::string texture_path = "data/"+material.diffuse_texname;
             texture_files.push_back(texture_path); // Store texture path
             std::cout << "Loaded texture: " << texture_path << std::endl;
         }
     }
 
     // Normalize vertices to fit within [-1, 1]
-    if (!out_vertices.empty()) {
-        glm::vec3 minBounds = out_vertices[0];
-        glm::vec3 maxBounds = out_vertices[0];
+    if(!isLoadingBoard)
+    {
+        if (!out_vertices.empty()) {
+            glm::vec3 minBounds = out_vertices[0];
+            glm::vec3 maxBounds = out_vertices[0];
 
-        // Compute bounding box
-        for (const auto& vertex : out_vertices) {
-            minBounds = glm::min(minBounds, vertex);
-            maxBounds = glm::max(maxBounds, vertex);
+            // Compute bounding box
+            for (const auto& vertex : out_vertices) {
+                minBounds = glm::min(minBounds, vertex);
+                maxBounds = glm::max(maxBounds, vertex);
+            }
+
+            glm::vec3 size = maxBounds - minBounds;
+            glm::vec3 center = (maxBounds + minBounds) * 0.5f;
+            // Normalize each vertex
+            for (auto& vertex : out_vertices) {
+                vertex = (vertex - center) / glm::max(size.x, glm::max(size.y, size.z));
+            }
         }
+    } else {
+       if (!out_vertices.empty()) {
+            glm::vec3 minBounds = out_vertices[0];
+            glm::vec3 maxBounds = out_vertices[0];
 
-        glm::vec3 size = maxBounds - minBounds;
-        glm::vec3 center = (maxBounds + minBounds) * 0.5f;
+            // Compute bounding box
+            for (const auto& vertex : out_vertices) {
+                minBounds = glm::min(minBounds, vertex);
+                maxBounds = glm::max(maxBounds, vertex);
+            }
 
-        // Normalize each vertex
-        for (auto& vertex : out_vertices) {
-            vertex = (vertex - center) / glm::max(size.x, glm::max(size.y, size.z));
-        }
+            glm::vec3 size = maxBounds - minBounds;
+            glm::vec3 center = (maxBounds + minBounds) * 0.5f;
+            center.y += 7.0;
+            // Normalize each vertex
+            for (auto& vertex : out_vertices) {
+                vertex = (vertex - center) / glm::max(size.x, glm::max(size.y, size.z));
+            }
+        } 
     }
     
-    // Collect texture IDs for materials
     for (const auto& material : out_materials) {
         if (!material.diffuse_texname.empty()) {
             GLuint textureID = getTextureID(material.diffuse_texname);
@@ -124,7 +178,6 @@ bool loadOBJ(
             }
         }
     }
-    // Print some information
     std::cout << "Vertices: " << out_vertices.size() << std::endl;
     std::cout << "UVs: " << out_uvs.size() << std::endl;
     std::cout << "Normals: " << out_normals.size() << std::endl;

@@ -106,34 +106,37 @@ int main( void )
 	glBindVertexArray(VertexArrayID);
 
 	// Create and compile our GLSL program from the shaders
-	GLuint programID = LoadShaders( "../StandardShading.vertexshader", "../StandardShading.fragmentshader" );
+	GLuint programID = LoadShaders( "data/StandardShading.vertexshader", "data/StandardShading.fragmentshader" );
 
 	// Get a handle for our "MVP" uniform
 	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 	GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
 	GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
-	// Load the texture
-	// GLuint Texture = loadDDS("data/uvmap.DDS");
-
-	
-	
-	// Get a handle for our "myTextureSampler" uniform
-	// GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
 
 	// Read our .obj file
-	std::vector<glm::vec3> vertices;
-	std::vector<glm::vec2> uvs;
-	std::vector<glm::vec3> normals; 
-	std::vector<tinyobj::material_t> mats;
-	std::vector<std::string> texture_files;
-	bool res = loadOBJ("chess3.obj", vertices, uvs, normals, mats, texture_files);
+	std::vector<glm::vec3> vertices, vertices_board;
+	std::vector<glm::vec2> uvs, uvs_board;
+	std::vector<glm::vec3> normals, normals_board; 
+	std::vector<tinyobj::material_t> mats, mats_board;
+	std::vector<std::string> texture_files, texture_files_board;
+	std::vector<GLuint> textureids, textureids_board;
+
+	bool res = loadOBJ("data/chess3.obj", vertices, uvs, normals, mats, texture_files, textureids);
+	bool re2 = loadOBJ("data/12951_Stone_Chess_Board_v1_L3.obj", vertices_board, uvs_board, normals_board, mats_board, texture_files_board, textureids_board, true);
 	
 	std::vector<GLuint> textures;
     for (const auto& tex_file : texture_files) {
-        textures.push_back(loadBMP_custom(tex_file.c_str()));  // Load texture
+        textures.push_back(loadBMP_custom(tex_file.c_str()));  
     }
-	// Load it into a VBO
+	for (const auto& tex_file : texture_files_board) {
+        textures.push_back(loadBMP_custom(tex_file.c_str()));  
+    }
+	vertices.insert(vertices.end(), vertices_board.begin(), vertices_board.end() );
 
+	// Assuming each material corresponds to a different object, calculate the offsets
+    size_t totalVertices = vertices.size();
+    size_t objectCount = textures.size();  // Assume one object per texture
+	
 	GLuint vertexbuffer;
 	glGenBuffers(1, &vertexbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
@@ -154,7 +157,6 @@ int main( void )
 	GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
 	do{
-
 		// Clear the screen
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -176,12 +178,6 @@ int main( void )
 
 		glm::vec3 lightPos = glm::vec3(4,4,4);
 		glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
-
-		// Bind our texture in Texture Unit 0
-		// glActiveTexture(GL_TEXTURE0);
-		// glBindTexture(GL_TEXTURE_2D, Texture);
-		// Set our "myTextureSampler" sampler to use Texture Unit 0
-		// glUniform1i(TextureID, 0);
 
 		// 1rst attribute buffer : vertices
 		glEnableVertexAttribArray(0);
@@ -217,17 +213,17 @@ int main( void )
 			0,                                // stride
 			(void*)0                          // array buffer offset
 		);
+		
 
-		for (size_t i = 0; i < textures.size(); ++i) {
+		for (size_t i = 0; i < textures.size()-1; ++i) {
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, textures[i]);
-
-            // Set texture uniform
-            // GLuint TextureID = glGetUniformLocation(programID, "myTextureSampler");
-            // glUniform1i(TextureID, 0);
-
-            glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+            glBindTexture(GL_TEXTURE_2D, textures[0]);
+            glDrawArrays(GL_TRIANGLES, 0, (vertices.size() - vertices_board.size())-1);
         }
+		glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textures[textures.size()-1]);
+		glDrawArrays(GL_TRIANGLES, ((vertices.size() - vertices_board.size())), vertices.size());	
+		
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
 		glDisableVertexAttribArray(2);
@@ -245,12 +241,9 @@ int main( void )
 	glDeleteBuffers(1, &uvbuffer);
 	glDeleteBuffers(1, &normalbuffer);
 	glDeleteProgram(programID);
-	// glDeleteTextures(1, &Texture);
 	glDeleteVertexArrays(1, &VertexArrayID);
 	for (auto tex : textures) glDeleteTextures(1, &tex);
-	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
-
 	return 0;
 }
 
