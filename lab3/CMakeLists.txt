@@ -19,6 +19,8 @@ CPMAddPackage(
   URL https://github.com/g-truc/glm/releases/download/1.0.1/glm-1.0.1-light.zip 
 )
 set(OpenGL_GL_PREFERENCE GLVND)
+set(GLFW_BUILD_X11 ON)
+set(GLFW_BUILD_WAYLAND OFF)
 CPMAddPackage(
   NAME glfw3
   URL https://github.com/glfw/glfw/archive/refs/tags/3.4.tar.gz
