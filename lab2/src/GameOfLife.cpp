@@ -29,8 +29,6 @@ GameOfLife::GameOfLife(int threadingModelIndex, std::size_t numThreads,
 
 void GameOfLife::_generateGrid(std::vector<std::vector<bool>> &grid)
 {
-    // std::cout << " width: " << _gridWidth << std::endl;
-    // std::cout << " height: " << _gridHeight << std::endl;
     std::srand(static_cast<unsigned>(std::time(nullptr)));
     for (std::size_t x = 0; x < _gridWidth; ++x)
     {

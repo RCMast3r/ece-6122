@@ -24,57 +24,7 @@ struct ProgramOptions
     int windowHeight = 600;
     int threadingModel = 1;
 };
-/// @brief function that change the default options configured in the program
-/// options struct instance above
-/// @param options the ref to the options struct in the main function
-/// @param argc number of commandline args
-/// @param argv the args themselves
-void handleCMDArgs(ProgramOptions &options, int argc, char *argv[])
-{
 
-    for (int i = 1; i < argc; i++)
-    {
-        if ((std::string(argv[i]) == "-n") && ((i + 1) < argc))
-        {
-            options.numThreads = std::stoi(std::string(argv[i + 1]));
-        }
-        else if ((std::string(argv[i]) == "-c") && ((i + 1) < argc))
-        {
-            options.cellSize = std::stoi(std::string(argv[i + 1]));
-        }
-        else if ((std::string(argv[i]) == "-x") && ((i + 1) < argc))
-        {
-            options.windowWidth = std::stoi(std::string(argv[i + 1]));
-        }
-        else if ((std::string(argv[i]) == "-y") && ((i + 1) < argc))
-        {
-            options.windowHeight = std::stoi(std::string(argv[i + 1]));
-        }
-        else if ((std::string(argv[i]) == "-t") && ((i + 1) < argc))
-        {
-            if (std::string(argv[i + 1]) == "SEQ")
-            {
-                options.threadingModel = 0;
-            }
-            else if (std::string(argv[i + 1]) == "THRD")
-            {
-
-                options.threadingModel = 1;
-            }
-            else if (std::string(argv[i + 1]) == "OMP")
-            {
-
-                options.threadingModel = 2;
-            }
-            else
-            {
-                std::cout << "WARNING: threading model type unknown, "
-                             "defaulting to THRD"
-                          << std::endl;
-            }
-        }
-    }
-}
 
 int main(int argc, char *argv[])
 {
