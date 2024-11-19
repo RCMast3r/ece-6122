@@ -9,6 +9,6 @@ struct ClientPacket
 
 struct ServerPacket
 {
-    bool server_exited;
+    bool serverExited;
 };
 #endif // __PACKET_H__

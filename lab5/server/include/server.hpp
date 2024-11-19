@@ -9,9 +9,10 @@ class Server
     public:
         Server(uint16_t port);
         void poll();
+        void sendExitNotification();
     private:
         sf::UdpSocket _socket;
-        uint16_t _port;
+        uint16_t _port, _clientPort;
         char _buffer[100];
 };
 

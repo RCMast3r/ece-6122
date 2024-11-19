@@ -2,12 +2,13 @@
 #define __CLIENT_H__
 #include <cstdint>
 #include <SFML/Network.hpp>
+#include <optional>
 
 class Client
 {
     public:
         Client(uint16_t port);
-        void poll();
+        void poll(std::optional<char> keyPressed, bool isExiting);
     private:
         sf::UdpSocket _socket;
         uint16_t _port;
