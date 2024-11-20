@@ -1,3 +1,9 @@
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 11/19/24
+Description: client class implementation source file
+*/
 #include <client.hpp>
 #include <stdexcept>
 #include <packet.hpp>
@@ -13,7 +19,7 @@ Client::Client(uint16_t port)
     _port = port;
 }
 
-void Client::poll(std::optional<char> keyPressed, bool isExiting)
+bool Client::poll(std::optional<char> keyPressed, bool isExiting)
 {
     
     if(keyPressed)
@@ -36,6 +42,8 @@ void Client::poll(std::optional<char> keyPressed, bool isExiting)
     {
         ServerPacket serverData;
         memcpy(&serverData, _buffer, sizeof(ServerPacket));
-        std::cout << serverData.serverExited <<" "<< receivedAddr.toString() <<std::endl;
+        return false;
     }
+
+    return true;
 }
