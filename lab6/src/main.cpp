@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-        // Broadcast size and data
+    // Broadcast size and data
     int size = static_cast<int>(opts.numSamples);
     MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if (worldRank != 0) xVals.resize(size);
@@ -109,12 +109,14 @@ int main(int argc, char *argv[]) {
             sub_avg = getResult(computePrimaryIntegral, xVals, worldRank, worldSize);
     }
 
-    double total_avg = 0.0;
-    MPI_Reduce(&sub_avg, &total_avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    double totalAvg = 0.0;
+    MPI_Reduce(&sub_avg, &totalAvg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
     if (worldRank == 0) {
-        std::cout << "Estimate for integral " << static_cast<int>(opts.integralVersion)
-                  << " is " << (total_avg / worldSize) << std::endl;
+        std::cout << "the estimate for integral " << static_cast<int>(opts.integralVersion)
+                  << " is " << (totalAvg / worldSize) << std::endl;
+
+        std::cout <<"bye!" <<std::endl;
     }
 
     MPI_Finalize();
