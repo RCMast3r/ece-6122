@@ -9,5 +9,4 @@
 
 ## how to run
 ```cd build/```
-
-```./lab5_client <port>```
+```srun ./lab6 -P 2 -N 10000000```
