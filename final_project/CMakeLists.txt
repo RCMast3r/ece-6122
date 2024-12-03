@@ -57,3 +57,30 @@ target_include_directories(lab3 PUBLIC include)
 target_compile_features(lab3 PUBLIC cxx_std_20)
 target_link_libraries(lab3 PUBLIC glm::glm glfw GLEW::GLEW OpenGL::OpenGL assimp::assimp)
 
+
+# add_executable(tutorial
+# 	src/tutorial.cpp	
+# 	src/ogl_utils/controls.cpp
+# 	src/ogl_utils/quaternion_utils.cpp
+# 	src/ogl_utils/tangentspace.cpp
+# 	src/ogl_utils/texture.cpp
+# 	src/ogl_utils/objloader.cpp
+# 	src/ogl_utils/shader.cpp
+# 	src/ogl_utils/text2D.cpp
+# 	src/ogl_utils/vboindexer.cpp
+# )
+
+
+# target_include_directories(tutorial PUBLIC include)
+# target_include_directories(tutorial PUBLIC include/ogl_utils)
+# target_compile_features(tutorial PUBLIC cxx_std_20)
+# target_link_libraries(tutorial PUBLIC glm::glm glfw GLEW::GLEW OpenGL::OpenGL assimp::assimp)
+
+# add_executable(assimp_tutorial
+# 	src/assimp_tutorial.cpp	
+	
+# )
+# target_include_directories(assimp_tutorial PUBLIC include)
+# target_include_directories(assimp_tutorial PUBLIC include/ogl_utils)
+# target_compile_features(assimp_tutorial PUBLIC cxx_std_20)
+# target_link_libraries(assimp_tutorial PUBLIC glm::glm glfw GLEW::GLEW OpenGL::OpenGL assimp::assimp)

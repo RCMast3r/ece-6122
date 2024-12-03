@@ -217,7 +217,8 @@ void chessComponent::setupTextureBuffers()
         }
         else
         { // Chess pieces directory path
-            cTextureFile = "data/Chess/" + cTextureFile;
+            cTextureFile = "data/" + cTextureFile;
+            // cTextureFile = "data/ChessPieces" + cTextureFile;
         }
         // Add the bmp extension
         cTextureFile += ".bmp";

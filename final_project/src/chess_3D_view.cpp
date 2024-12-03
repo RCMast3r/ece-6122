@@ -27,12 +27,12 @@ Description :
 #include <GL/glew.h>
 // Include GLFW
 #include <GLFW/glfw3.h>
-GLFWwindow* window;
+
 
 // Include GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-using namespace glm;
+
 // User supporting files
 #include <shader.hpp>
 #include <texture.hpp>
@@ -43,12 +43,16 @@ using namespace glm;
 #include "chessComponent.h"
 #include "chessCommon.h"
 
+
+GLFWwindow* window;
+
+using namespace glm;
+
 // Sets up the chess board
 void setupChessBoard(tModelMap& cTModelMap);
 
 int main( void )
 {
-    // Initialize GLFW
     if( !glfwInit() )
     {
         fprintf( stderr, "Failed to initialize GLFW\n" );
@@ -125,15 +129,17 @@ int main( void )
 
     // Load the OBJ files
     bool cBoard = loadAssImpLab3("data/Stone_Chess_Board/12951_Stone_Chess_Board_v1_L3.obj", gchessComponents);
-    bool cComps = loadAssImpLab3("data/Chess/chess-mod.obj", gchessComponents);
+    // bool cComps = loadAssImpLab3("data/Chess/chess-mod.obj", gchessComponents);
+    bool cComps = loadAssImpLab3("data/bishop.obj", gchessComponents);
+    // bool cComps = loadAssImpLab3("data/ChessPieces/chess3.obj", gchessComponents);
 
     // Proceed iff OBJ loading is successful
-    if (!cBoard || !cComps)
-    {
-        // Quit the program (Failed OBJ loading)
-        std::cout << "Program failed due to OBJ loading failure, please CHECK!" << std::endl;
-        return -1;
-    }
+    // if (!cBoard || !cComps)
+    // {
+    //     // Quit the program (Failed OBJ loading)
+    //     std::cout << "Program failed due to OBJ loading failure, please CHECK!" << std::endl;
+    //     return -1;
+    // }
 
     // Setup the Chess board locations
     tModelMap cTModelMap;
@@ -145,6 +151,7 @@ int main( void )
     {
         // Setup VBO buffers
         cit->setupGLBuffers();
+        
         // Setup Texture
         cit->setupTextureBuffers();
     }
@@ -190,13 +197,13 @@ int main( void )
         {            
             // Seach for mesh rendering targets and counts
             tPosition cTPosition = cTModelMap[cit->getComponentID()];
-            
+            // std::cout << cTPosition.
             // Repeat for pair of players using repetition count
             for (unsigned int pit = 0; pit < cTPosition.rCnt; pit++)
             {
                 // Modify the X for player repetition
                 tPosition cTPositionMorph = cTPosition;
-                cTPositionMorph.tPos.x += pit * cTPosition.rDis * CHESS_BOX_SIZE;
+                // cTPositionMorph.tPos.x += pit * cTPosition.rDis * CHESS_BOX_SIZE;
                 // Pass it for Model matrix generation
                 glm::mat4 ModelMatrix = cit->genModelMatrix(cTPositionMorph);
                 // Genrate the MVP matrix
@@ -248,12 +255,12 @@ void setupChessBoard(tModelMap& cTModelMap)
         // Chess board              Count  rDis Angle      Axis             Scale                          Position (X, Y, Z)
         {"12951_Stone_Chess_Board", {1,    0,   0.f,    {1, 0, 0},    glm::vec3(CBSCALE), {0.f,     0.f,                             PHEIGHT}}},
         // First player             Count  rDis Angle      Axis             Scale                          Position (X, Y, Z)
-        {"TORRE3",                  {2,   (8-1),90.f,   {1, 0, 0},    glm::vec3(CPSCALE), {-3.5*CHESS_BOX_SIZE, -3.5*CHESS_BOX_SIZE, PHEIGHT}}},
-        {"Object3",                 {2,   (6-1),90.f,   {1, 0, 0},    glm::vec3(CPSCALE), {-2.5*CHESS_BOX_SIZE, -3.5*CHESS_BOX_SIZE, PHEIGHT}}},
-        {"ALFIERE3",                {2,   (4-1),90.f,   {1, 0, 0},    glm::vec3(CPSCALE), {-1.5*CHESS_BOX_SIZE, -3.5*CHESS_BOX_SIZE, PHEIGHT}}},
-        {"REGINA2",                 {1,    0,   90.f,   {1, 0, 0},    glm::vec3(CPSCALE), {-0.5*CHESS_BOX_SIZE, -3.5*CHESS_BOX_SIZE, PHEIGHT}}},
-        {"RE2",                     {1,    0,   90.f,   {1, 0, 0},    glm::vec3(CPSCALE), { 0.5*CHESS_BOX_SIZE, -3.5*CHESS_BOX_SIZE, PHEIGHT}}},
-        {"PEDONE13",                {8,    1,   90.f,   {1, 0, 0},    glm::vec3(CPSCALE), {-3.5*CHESS_BOX_SIZE, -2.5*CHESS_BOX_SIZE, PHEIGHT}}}
+        {"TORRE3",                  {2,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
+        {"Object3",                 {2,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
+        {"ALFIERE3",                {2,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
+        {"REGINA2",                 {1,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
+        {"RE2",                     {1,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
+        {"PEDONE13",                {8,    1,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}}
     };
 
     // Second player derived from first player!!

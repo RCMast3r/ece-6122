@@ -113,6 +113,8 @@ bool loadOBJ(
 		out_normals .push_back(normal);
 	
 	}
+
+	
 	fclose(file);
 	return true;
 }
@@ -230,13 +232,37 @@ bool loadAssImpLab3(const char* path, std::vector<chessComponent>& gchessCompone
 		gChessComponent->reserveStorage(mesh->mNumVertices, mesh->mNumFaces);
 
 		// Fill vertices positions
+		std::vector<glm::vec3> out_vertices;
 		for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
 			aiVector3D pos = mesh->mVertices[i];
 			glm::vec3 mPos(pos.x, pos.y, pos.z);
-			gChessComponent->addVertices(mPos);
+			out_vertices.push_back(mPos);
+			
 		}
 
-		// std::cout << "Number of texture Coordinates " << mesh->GetNumUVChannels() << std::endl;
+		if (!out_vertices.empty()) {
+			glm::vec3 minBounds = out_vertices[0];
+			glm::vec3 maxBounds = out_vertices[0];
+
+			// Compute bounding box
+			for (const auto& vertex : out_vertices) {
+				minBounds = glm::min(minBounds, vertex);
+				maxBounds = glm::max(maxBounds, vertex);
+			}
+
+			glm::vec3 size = maxBounds - minBounds;
+			glm::vec3 center = (maxBounds + minBounds) * 0.5f;
+			// Normalize each vertex
+			for (auto& vertex : out_vertices) {
+				vertex = (vertex - center) / glm::max(size.x, glm::max(size.y, size.z));
+				gChessComponent->addVertices(vertex);
+			}
+		}
+		
+		
+		
+
+		std::cout << "Number of texture Coordinates " << mesh->GetNumUVChannels() << std::endl;
 		// Fill vertices texture coordinates
 		for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
 			aiVector3D UVW = mesh->mTextureCoords[0][i]; // Assume only 1 set of UV coords; AssImp supports 8 UV sets.

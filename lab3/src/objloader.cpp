@@ -166,7 +166,7 @@ bool loadOBJ(
             for (auto& vertex : out_vertices) {
                 vertex = (vertex - center) / glm::max(size.x, glm::max(size.y, size.z));
             }
-        } 
+        }
     }
     
     for (const auto& material : out_materials) {
