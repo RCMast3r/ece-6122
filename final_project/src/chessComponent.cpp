@@ -186,10 +186,15 @@ void chessComponent::setupGLBuffers()
 void chessComponent::setupTexture(GLuint& TextureID)
 {
     // Bind our texture in Texture Unit 0
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, Texture);
-    // Set our "myTextureSampler" sampler to use Texture Unit 0
-    glUniform1i(TextureID, 0);
+
+    if(Texture)
+    {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, Texture);
+        // Set our "myTextureSampler" sampler to use Texture Unit 0
+        glUniform1i(TextureID, 0);
+    }
+    
 }
 
 // Setup rendering buffers
@@ -214,6 +219,8 @@ void chessComponent::setupTextureBuffers()
         if (cTextureFile == "12951_Stone_Chess_Board_diff")
         { // Chess board directory path
             cTextureFile = "data/Stone_Chess_Board/" + cTextureFile;
+            cTextureFile += ".bmp";
+            Texture = loadBMP_custom(&cTextureFile[0]);
         }
         else
         { // Chess pieces directory path
@@ -221,7 +228,6 @@ void chessComponent::setupTextureBuffers()
             // cTextureFile = "data/ChessPieces" + cTextureFile;
         }
         // Add the bmp extension
-        cTextureFile += ".bmp";
         // Test print
         // std::cout << "Texture file is " << cTextureFile << std::endl;
     }
@@ -231,7 +237,6 @@ void chessComponent::setupTextureBuffers()
     }
 
     // Load the texture
-    Texture = loadBMP_custom(&cTextureFile[0]);
 }
 
 // Render a mesh
@@ -279,6 +284,7 @@ void chessComponent::renderMesh()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
 
     // Draw the triangles !
+    std::cout << cName << " num indices " << indices.size() <<std::endl;
     glDrawElements(
         GL_TRIANGLES,      // mode
         indices.size(),    // count
@@ -325,7 +331,7 @@ void chessComponent::storeTextureID(std::string cTextureFile)
     // Capture the component name
     this->cTextureFile = cTextureFile;
     // Testing
-    // std::cout << "The texture file is " << this->cTextureFile << std::endl;
+    std::cout << "The texture file is " << this->cTextureFile << std::endl;
 }
 
 // Store Mesh properties (mainly for debug and bound checks)

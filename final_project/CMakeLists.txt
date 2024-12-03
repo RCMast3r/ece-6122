@@ -48,6 +48,7 @@ add_executable(lab3
 	src/texture.cpp
 	src/objloader.cpp
 	src/chessComponent.cpp
+	src/objloader2.cpp
 )
 
 

@@ -43,6 +43,7 @@ Description :
 #include "chessComponent.h"
 #include "chessCommon.h"
 
+#include <objloader2.hpp>
 
 GLFWwindow* window;
 
@@ -129,8 +130,10 @@ int main( void )
 
     // Load the OBJ files
     bool cBoard = loadAssImpLab3("data/Stone_Chess_Board/12951_Stone_Chess_Board_v1_L3.obj", gchessComponents);
+    bool cComps = LoadOBJs("data/bishop.obj", gchessComponents);
     // bool cComps = loadAssImpLab3("data/Chess/chess-mod.obj", gchessComponents);
-    bool cComps = loadAssImpLab3("data/bishop.obj", gchessComponents);
+    // bool cComps = loadAssImpLab3("data/bishop.obj", gchessComponents);
+    
     // bool cComps = loadAssImpLab3("data/ChessPieces/chess3.obj", gchessComponents);
 
     // Proceed iff OBJ loading is successful
@@ -197,7 +200,7 @@ int main( void )
         {            
             // Seach for mesh rendering targets and counts
             tPosition cTPosition = cTModelMap[cit->getComponentID()];
-            // std::cout << cTPosition.
+            std::cout << cit->getComponentID() <<std::endl;
             // Repeat for pair of players using repetition count
             for (unsigned int pit = 0; pit < cTPosition.rCnt; pit++)
             {
@@ -255,7 +258,7 @@ void setupChessBoard(tModelMap& cTModelMap)
         // Chess board              Count  rDis Angle      Axis             Scale                          Position (X, Y, Z)
         {"12951_Stone_Chess_Board", {1,    0,   0.f,    {1, 0, 0},    glm::vec3(CBSCALE), {0.f,     0.f,                             PHEIGHT}}},
         // First player             Count  rDis Angle      Axis             Scale                          Position (X, Y, Z)
-        {"TORRE3",                  {2,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
+        {"Bishop_Cylinder",         {2,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
         {"Object3",                 {2,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
         {"ALFIERE3",                {2,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
         {"REGINA2",                 {1,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},

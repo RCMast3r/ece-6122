@@ -219,7 +219,9 @@ bool loadAssImpLab3(const char* path, std::vector<chessComponent>& gchessCompone
 								mesh->HasTextureCoords(0), mesh->HasVertexColors(0),
 								mesh->GetNumUVChannels() };
 
-		// Create a chess comonent object
+		// Create a chess comonent object 
+
+		// why heap allocate here ..... ?
 		chessComponent* gChessComponent = new chessComponent();
 
 		// Store mesh properties
@@ -232,35 +234,11 @@ bool loadAssImpLab3(const char* path, std::vector<chessComponent>& gchessCompone
 		gChessComponent->reserveStorage(mesh->mNumVertices, mesh->mNumFaces);
 
 		// Fill vertices positions
-		std::vector<glm::vec3> out_vertices;
 		for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
 			aiVector3D pos = mesh->mVertices[i];
 			glm::vec3 mPos(pos.x, pos.y, pos.z);
-			out_vertices.push_back(mPos);
-			
+			gChessComponent->addVertices(mPos);
 		}
-
-		if (!out_vertices.empty()) {
-			glm::vec3 minBounds = out_vertices[0];
-			glm::vec3 maxBounds = out_vertices[0];
-
-			// Compute bounding box
-			for (const auto& vertex : out_vertices) {
-				minBounds = glm::min(minBounds, vertex);
-				maxBounds = glm::max(maxBounds, vertex);
-			}
-
-			glm::vec3 size = maxBounds - minBounds;
-			glm::vec3 center = (maxBounds + minBounds) * 0.5f;
-			// Normalize each vertex
-			for (auto& vertex : out_vertices) {
-				vertex = (vertex - center) / glm::max(size.x, glm::max(size.y, size.z));
-				gChessComponent->addVertices(vertex);
-			}
-		}
-		
-		
-		
 
 		std::cout << "Number of texture Coordinates " << mesh->GetNumUVChannels() << std::endl;
 		// Fill vertices texture coordinates
@@ -295,7 +273,7 @@ bool loadAssImpLab3(const char* path, std::vector<chessComponent>& gchessCompone
 		// Push the class in the class vector
 		gchessComponents.push_back(*gChessComponent);
 
-		// Delete the Class to avoid mixing data
+		// Delete the Class to avoid mixing data 
 		delete gChessComponent;
 	}
 

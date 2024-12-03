@@ -48,7 +48,7 @@ private:
     glm::vec3 cBoundingLimitsMax = { 0, 0, 0 };
 
     // Texture properties
-    GLuint Texture;
+    GLuint Texture = 0;
 
     // Compute the Geometric center
     // Inputs: None
