@@ -85,3 +85,21 @@ target_link_libraries(lab3 PUBLIC glm::glm glfw GLEW::GLEW OpenGL::OpenGL assimp
 # target_include_directories(assimp_tutorial PUBLIC include/ogl_utils)
 # target_compile_features(assimp_tutorial PUBLIC cxx_std_20)
 # target_link_libraries(assimp_tutorial PUBLIC glm::glm glfw GLEW::GLEW OpenGL::OpenGL assimp::assimp)
+add_executable(komtest src/main2.cpp)
+
+
+add_executable(chessbackend_test 
+	src/chessbackend/ChessBackend.cpp
+	src/chessbackend/ChessStateManager.cpp
+	src/chessbackend/testbackend.cpp
+)
+
+target_include_directories(chessbackend_test PUBLIC include/chessbackend)
+
+add_executable(chesscombind_test
+	src/chessbackend/ChessBackend.cpp
+	src/chessbackend/ChessStateManager.cpp
+	src/chessbackend/testcombined.cpp
+)
+
+target_include_directories(chesscombind_test PUBLIC include/chessbackend)

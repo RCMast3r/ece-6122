@@ -284,7 +284,7 @@ void chessComponent::renderMesh()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
 
     // Draw the triangles !
-    std::cout << cName << " num indices " << indices.size() <<std::endl;
+    // std::cout << cName << " num indices " << indices.size() <<std::endl;
     glDrawElements(
         GL_TRIANGLES,      // mode
         indices.size(),    // count

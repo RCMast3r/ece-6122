@@ -221,7 +221,7 @@ bool loadAssImpLab3(const char* path, std::vector<chessComponent>& gchessCompone
 
 		// Create a chess comonent object 
 
-		// why heap allocate here ..... ?
+		// why heap allocate here ?
 		chessComponent* gChessComponent = new chessComponent();
 
 		// Store mesh properties

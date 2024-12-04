@@ -130,8 +130,8 @@ int main( void )
 
     // Load the OBJ files
     bool cBoard = loadAssImpLab3("data/Stone_Chess_Board/12951_Stone_Chess_Board_v1_L3.obj", gchessComponents);
-    bool cComps = LoadOBJs("data/bishop.obj", gchessComponents);
-    // bool cComps = loadAssImpLab3("data/Chess/chess-mod.obj", gchessComponents);
+    // bool cComps = LoadOBJs("data/bishop.obj", gchessComponents);
+    bool cComps = loadAssImpLab3("data/Chess/chessBrown.obj", gchessComponents);
     // bool cComps = loadAssImpLab3("data/bishop.obj", gchessComponents);
     
     // bool cComps = loadAssImpLab3("data/ChessPieces/chess3.obj", gchessComponents);
@@ -200,7 +200,7 @@ int main( void )
         {            
             // Seach for mesh rendering targets and counts
             tPosition cTPosition = cTModelMap[cit->getComponentID()];
-            std::cout << cit->getComponentID() <<std::endl;
+            // std::cout << cit->getComponentID() <<std::endl;
             // Repeat for pair of players using repetition count
             for (unsigned int pit = 0; pit < cTPosition.rCnt; pit++)
             {
