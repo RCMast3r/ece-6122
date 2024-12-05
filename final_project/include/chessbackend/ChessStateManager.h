@@ -7,7 +7,7 @@
 #include <cctype>
 #include <stdexcept>
 #include <utility>
-
+#include <optional>
 class ChessStateManager
 {
 public:
@@ -18,12 +18,20 @@ public:
     std::string generateFEN();
     void parseFEN(const std::string &fen);
     void printBoard() const;
-    std::string applyMove(const std::string &move);
+    std::optional<std::string> applyMove(const std::string &move);
+    void resetBoard();
 private:
     /// @brief Convert algebraic notation (e.g., "e2") to board indices
     /// @param pos the string to get position from index-wise
     /// @return the coords
     std::pair<int, int> _algebraicToIndex(const std::string &pos);
+    bool _isSameColor(int row, int col);
+    bool _validatePawnMove(int startRow, int startCol, int endRow, int endCol);
+    bool _validateRookMove(int startRow, int startCol, int endRow, int endCol);
+    bool _validateKnightMove(int startRow, int startCol, int endRow, int endCol);
+    bool _validateBishopMove(int startRow, int startCol, int endRow, int endCol);
+    bool _validateQueenMove(int startRow, int startCol, int endRow, int endCol);
+    bool _validateKingMove(int startRow, int startCol, int endRow, int endCol);
     
 private:
     char _board[8][8] = {

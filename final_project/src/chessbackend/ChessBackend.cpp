@@ -12,7 +12,6 @@ bool ECE_ChessEngine::InitializeEngine()
     pid_t pid = fork();
     if (pid == -1) {
         perror("fork");
-        // exit(EXIT_FAILURE);
         return false;
     }
     // std::cout <<"pid done" <<std::endl;
@@ -32,7 +31,7 @@ bool ECE_ChessEngine::InitializeEngine()
         close(_outputPipe[1]);
 
         // Path to the engine executabl
-        // std::cout <<"opening w/ execlp" <<std::endl;
+        std::cout <<"opening w/ execlp" <<std::endl;
 
         const char* enginePath = "./komodo"; // Ensure the path is correct and executable is present
         execlp(enginePath, enginePath, nullptr);
@@ -43,6 +42,7 @@ bool ECE_ChessEngine::InitializeEngine()
         // exit(EXIT_FAILURE);
     } else {
         // Parent process: Close unused pipe ends
+        // std::cout <<"erm" <<std::endl;
         close(_inputPipe[0]); // Close the read end of the input pipe
         close(_outputPipe[1]); // Close the write end of the output pipe
 
