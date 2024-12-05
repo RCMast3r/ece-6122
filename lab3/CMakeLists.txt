@@ -23,7 +23,8 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(glm)
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_BUILD_TYPE Debug)
 set(OpenGL_GL_PREFERENCE GLVND)
 set(GLFW_BUILD_X11 ON)
 set(GLFW_BUILD_WAYLAND OFF)
@@ -50,6 +51,8 @@ add_executable(lab3 src/test.cpp
   src/texture.cpp
   src/vboindexer.cpp
   src/transform.cpp
+
+  src/ogl_utils/shader.cpp
   )
 target_compile_features(lab3 PUBLIC cxx_std_20)
 target_link_libraries(lab3 PUBLIC glm::glm glfw GLEW::GLEW OpenGL::OpenGL tinyobjloader)

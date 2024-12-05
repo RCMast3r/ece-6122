@@ -48,71 +48,77 @@ void renderObject(const std::vector<glm::vec3>& vertices,
 
 int main( void )
 {
-	// Initialize GLFW
-	if( !glfwInit() )
+	auto params = setupScene();
+	if(!params)
 	{
-		fprintf( stderr, "Failed to initialize GLFW\n" );
-		getchar();
-		return -1;
+		std::cout << "error occured during setup, exiting" <<std::endl;
+		return 0;
 	}
+	// Initialize GLFW
+	// if( !glfwInit() )
+	// {
+	// 	fprintf( stderr, "Failed to initialize GLFW\n" );
+	// 	getchar();
+	// 	return -1;
+	// }
 
-	glfwWindowHint(GLFW_SAMPLES, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make macOS happy; should not be needed
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	// glfwWindowHint(GLFW_SAMPLES, 4);
+	// glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	// glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	// glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make macOS happy; should not be needed
+	// glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	// Open a window and create its OpenGL context
-	window = glfwCreateWindow( 1024, 768, "Tutorial 07 - Model Loading", NULL, NULL);
-	if( window == NULL ){
-		fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
-		getchar();
-		glfwTerminate();
-		return -1;
-	}
-	glfwMakeContextCurrent(window);
+	// // Open a window and create its OpenGL context
+	// window = glfwCreateWindow( 1024, 768, "Tutorial 07 - Model Loading", NULL, NULL);
+	// if( window == NULL ){
+	// 	fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
+	// 	getchar();
+	// 	glfwTerminate();
+	// 	return -1;
+	// }
+	// glfwMakeContextCurrent(window);
 
-	// Initialize GLEW
-	glewExperimental = true; // Needed for core profile
-	if (glewInit() != GLEW_OK) {
-		fprintf(stderr, "Failed to initialize GLEW\n");
-		getchar();
-		glfwTerminate();
-		return -1;
-	}
+	// // Initialize GLEW
+	// glewExperimental = true; // Needed for core profile
+	// if (glewInit() != GLEW_OK) {
+	// 	fprintf(stderr, "Failed to initialize GLEW\n");
+	// 	getchar();
+	// 	glfwTerminate();
+	// 	return -1;
+	// }
 
-	// Ensure we can capture the escape key being pressed below
-	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-    // Hide the mouse and enable unlimited movement
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	// // Ensure we can capture the escape key being pressed below
+	// glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+    // // Hide the mouse and enable unlimited movement
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     
-    // Set the mouse at the center of the screen
-    glfwPollEvents();
-    glfwSetCursorPos(window, 1024/2, 768/2);
+    // // Set the mouse at the center of the screen
+    // glfwPollEvents();
+    // glfwSetCursorPos(window, 1024/2, 768/2);
 
-	// Dark blue background
-	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+	// // Dark blue background
+	// glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
-	// Enable depth test
-	glEnable(GL_DEPTH_TEST);
-	// Accept fragment if it is closer to the camera than the former one
-	glDepthFunc(GL_LESS); 
+	// // Enable depth test
+	// glEnable(GL_DEPTH_TEST);
+	// // Accept fragment if it is closer to the camera than the former one
+	// glDepthFunc(GL_LESS); 
 
-	// Cull triangles which normal is not towards the camera
-	glEnable(GL_CULL_FACE);
+	// // Cull triangles which normal is not towards the camera
+	// glEnable(GL_CULL_FACE);
 
-	GLuint VertexArrayID;
-	glGenVertexArrays(1, &VertexArrayID);
-	glBindVertexArray(VertexArrayID);
+	// GLuint VertexArrayID;
+	// glGenVertexArrays(1, &VertexArrayID);
+	// glBindVertexArray(VertexArrayID);
 
-	// Create and compile our GLSL program from the shaders
-	GLuint programID = LoadShaders( "data/StandardShading.vertexshader", "data/StandardShading.fragmentshader" );
+	// // Create and compile our GLSL program from the shaders
+	// GLuint programID = LoadShaders( "data/StandardShading.vertexshader", "data/StandardShading.fragmentshader" );
 
-	// Get a handle for our "MVP" uniform
-	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
-	GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
-	GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
-
+	// // Get a handle for our "MVP" uniform
+	// GLuint MatrixID = glGetUniformLocation(programID, "MVP");
+	// GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
+	// GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
+	// GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
 	// Read our .obj file
 	std::vector<glm::vec3> vertices, vertices_board;
 	std::vector<glm::vec2> uvs, uvs_board;
@@ -123,7 +129,7 @@ int main( void )
 
 	bool res = loadOBJ("data/chess3.obj", vertices, uvs, normals, mats, texture_files, textureids);
 	bool re2 = loadOBJ("data/12951_Stone_Chess_Board_v1_L3.obj", vertices_board, uvs_board, normals_board, mats_board, texture_files_board, textureids_board, true);
-	
+
 	std::vector<GLuint> textures;
     for (const auto& tex_file : texture_files) {
         textures.push_back(loadBMP_custom(tex_file.c_str()));  
@@ -131,12 +137,17 @@ int main( void )
 	for (const auto& tex_file : texture_files_board) {
         textures.push_back(loadBMP_custom(tex_file.c_str()));  
     }
+
 	vertices.insert(vertices.end(), vertices_board.begin(), vertices_board.end() );
 
+	// uvs.insert(uvs.end(), uvs_board.begin(), uvs_board.end());
+	// normals.insert(normals.end(), normals_board.begin(), normals_board.end());
 	// Assuming each material corresponds to a different object, calculate the offsets
     size_t totalVertices = vertices.size();
     size_t objectCount = textures.size();  // Assume one object per texture
-	
+
+
+// setuo
 	GLuint vertexbuffer;
 	glGenBuffers(1, &vertexbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
@@ -153,15 +164,15 @@ int main( void )
 	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
 
 	// Get a handle for our "LightPosition" uniform
-	glUseProgram(programID);
-	GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
-
+	// glUseProgram(params.programID);
+	// GLuint LightID = glGetUniformLocation(params.programID, "LightPosition_worldspace");
+	auto p = *p;
 	do{
 		// Clear the screen
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Use our shader
-		glUseProgram(programID);
+		glUseProgram(p.programID);
 
 		// Compute the MVP matrix from keyboard and mouse input
 		computeMatricesFromInputs();
@@ -188,7 +199,7 @@ int main( void )
 			GL_FLOAT,           // type
 			GL_FALSE,           // normalized?
 			0,                  // stride
-			(void*)0            // array buffer offset
+			(void*)0            // array buffer offset/glUniform1i
 		);
 
 		// 2nd attribute buffer : UVs
@@ -213,17 +224,16 @@ int main( void )
 			0,                                // stride
 			(void*)0                          // array buffer offset
 		);
-		
 
-		for (size_t i = 0; i < textures.size()-1; ++i) {
+		glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+		for (size_t i = 0; i < textures.size(); ++i) {
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, textures[0]);
-            glDrawArrays(GL_TRIANGLES, 0, (vertices.size() - vertices_board.size())-1);
+            glBindTexture(GL_TEXTURE_2D, textures[i]);
+			glUniform1i(TextureID, 0);
+            // glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+			// glUniform1i(textures[i], 0);
         }
-		glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textures[textures.size()-1]);
-		glDrawArrays(GL_TRIANGLES, ((vertices.size() - vertices_board.size())), vertices.size());	
-		
+
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
 		glDisableVertexAttribArray(2);
