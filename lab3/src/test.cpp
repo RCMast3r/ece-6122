@@ -3,11 +3,11 @@
 #include <stdlib.h>
 #include <vector>
 // Include GLEW
+
 #include <GL/glew.h>
 
 // Include GLFW
 #include <GLFW/glfw3.h>
-GLFWwindow* window;
 
 // Include GLM
 #include <glm/glm.hpp>
@@ -19,6 +19,8 @@ using namespace glm;
 #include <controls.hpp>
 #include <objloader.hpp>
 // #include <tiny_obj_loader.h>
+#include <baseoglmanaging.hpp>
+#include <iostream>
 
 void renderObject(const std::vector<glm::vec3>& vertices, 
                   const std::vector<glm::vec2>& uvs, 
@@ -48,78 +50,17 @@ void renderObject(const std::vector<glm::vec3>& vertices,
 
 int main( void )
 {
+	ControlsManager controls;
 	auto params = setupScene();
+	GLuint VertexArrayID;
+    glGenVertexArrays(1, &VertexArrayID);
+    glBindVertexArray(VertexArrayID);
 	if(!params)
 	{
 		std::cout << "error occured during setup, exiting" <<std::endl;
 		return 0;
 	}
-	// Initialize GLFW
-	// if( !glfwInit() )
-	// {
-	// 	fprintf( stderr, "Failed to initialize GLFW\n" );
-	// 	getchar();
-	// 	return -1;
-	// }
 
-	// glfwWindowHint(GLFW_SAMPLES, 4);
-	// glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	// glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	// glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make macOS happy; should not be needed
-	// glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-	// // Open a window and create its OpenGL context
-	// window = glfwCreateWindow( 1024, 768, "Tutorial 07 - Model Loading", NULL, NULL);
-	// if( window == NULL ){
-	// 	fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
-	// 	getchar();
-	// 	glfwTerminate();
-	// 	return -1;
-	// }
-	// glfwMakeContextCurrent(window);
-
-	// // Initialize GLEW
-	// glewExperimental = true; // Needed for core profile
-	// if (glewInit() != GLEW_OK) {
-	// 	fprintf(stderr, "Failed to initialize GLEW\n");
-	// 	getchar();
-	// 	glfwTerminate();
-	// 	return -1;
-	// }
-
-	// // Ensure we can capture the escape key being pressed below
-	// glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-    // // Hide the mouse and enable unlimited movement
-    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    
-    // // Set the mouse at the center of the screen
-    // glfwPollEvents();
-    // glfwSetCursorPos(window, 1024/2, 768/2);
-
-	// // Dark blue background
-	// glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
-
-	// // Enable depth test
-	// glEnable(GL_DEPTH_TEST);
-	// // Accept fragment if it is closer to the camera than the former one
-	// glDepthFunc(GL_LESS); 
-
-	// // Cull triangles which normal is not towards the camera
-	// glEnable(GL_CULL_FACE);
-
-	// GLuint VertexArrayID;
-	// glGenVertexArrays(1, &VertexArrayID);
-	// glBindVertexArray(VertexArrayID);
-
-	// // Create and compile our GLSL program from the shaders
-	// GLuint programID = LoadShaders( "data/StandardShading.vertexshader", "data/StandardShading.fragmentshader" );
-
-	// // Get a handle for our "MVP" uniform
-	// GLuint MatrixID = glGetUniformLocation(programID, "MVP");
-	// GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
-	// GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
-	// GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
-	// Read our .obj file
 	std::vector<glm::vec3> vertices, vertices_board;
 	std::vector<glm::vec2> uvs, uvs_board;
 	std::vector<glm::vec3> normals, normals_board; 
@@ -140,14 +81,15 @@ int main( void )
 
 	vertices.insert(vertices.end(), vertices_board.begin(), vertices_board.end() );
 
-	// uvs.insert(uvs.end(), uvs_board.begin(), uvs_board.end());
-	// normals.insert(normals.end(), normals_board.begin(), normals_board.end());
+	uvs.insert(uvs.end(), uvs_board.begin(), uvs_board.end());
+	normals.insert(normals.end(), normals_board.begin(), normals_board.end());
 	// Assuming each material corresponds to a different object, calculate the offsets
     size_t totalVertices = vertices.size();
-    size_t objectCount = textures.size();  // Assume one object per texture
+    size_t objectCount = textures.size(); 
 
+	// 
 
-// setuo
+// setup buffers for 
 	GLuint vertexbuffer;
 	glGenBuffers(1, &vertexbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
@@ -166,29 +108,27 @@ int main( void )
 	// Get a handle for our "LightPosition" uniform
 	// glUseProgram(params.programID);
 	// GLuint LightID = glGetUniformLocation(params.programID, "LightPosition_worldspace");
-	auto p = *p;
+	auto p = *params;
 	do{
 		// Clear the screen
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		// Use our shader
 		glUseProgram(p.programID);
 
 		// Compute the MVP matrix from keyboard and mouse input
-		computeMatricesFromInputs();
-		glm::mat4 ProjectionMatrix = getProjectionMatrix();
-		glm::mat4 ViewMatrix = getViewMatrix();
+		auto cntrls = controls.computeMatricesFromInputs(p);
+
 		glm::mat4 ModelMatrix = glm::mat4(1.0);
-		glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+		glm::mat4 MVP = cntrls.projectionMatrix * cntrls.viewMatrix * ModelMatrix;
 
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
-		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-		glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
-		glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
+		glUniformMatrix4fv(p.matrixID, 1, GL_FALSE, &MVP[0][0]);
+		glUniformMatrix4fv(p.modelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
+		glUniformMatrix4fv(p.viewMatrixID, 1, GL_FALSE, &cntrls.viewMatrix[0][0]);
 
 		glm::vec3 lightPos = glm::vec3(4,4,4);
-		glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
+		glUniform3f(p.lightID, lightPos.x, lightPos.y, lightPos.z);
 
 		// 1rst attribute buffer : vertices
 		glEnableVertexAttribArray(0);
@@ -226,31 +166,38 @@ int main( void )
 		);
 
 		glDrawArrays(GL_TRIANGLES, 0, vertices.size());
-		for (size_t i = 0; i < textures.size(); ++i) {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, textures[i]);
-			glUniform1i(TextureID, 0);
-            // glDrawArrays(GL_TRIANGLES, 0, vertices.size());
-			// glUniform1i(textures[i], 0);
-        }
+		// for (size_t i = 0; i < textures.size(); ++i) {
+        //     glActiveTexture(GL_TEXTURE0);
+        //     glBindTexture(GL_TEXTURE_2D, textures[i]);
+		// 	glUniform1i(p.textureID, 0);
+        //     // glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+		// 	// glUniform1i(textures[i], 0);
+        // }
 
+		for (const auto texture: textures)
+		{
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texture);
+			// Set our "myTextureSampler" sampler to use Texture Unit 0
+			glUniform1i(p.textureID, 0);
+		}
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
 		glDisableVertexAttribArray(2);
 
 		// Swap buffers
-		glfwSwapBuffers(window);
+		glfwSwapBuffers(p.current_window);
 		glfwPollEvents();
 
 	} // Check if the ESC key was pressed or the window was closed
-	while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
-		   glfwWindowShouldClose(window) == 0 );
+	while( glfwGetKey(p.current_window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
+		   glfwWindowShouldClose(p.current_window) == 0 );
 
 	// Cleanup VBO and shader
 	glDeleteBuffers(1, &vertexbuffer);
 	glDeleteBuffers(1, &uvbuffer);
 	glDeleteBuffers(1, &normalbuffer);
-	glDeleteProgram(programID);
+	glDeleteProgram(p.programID);
 	glDeleteVertexArrays(1, &VertexArrayID);
 	for (auto tex : textures) glDeleteTextures(1, &tex);
 	glfwTerminate();

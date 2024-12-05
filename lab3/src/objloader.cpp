@@ -63,7 +63,7 @@ bool loadOBJ(
     out_vertices.reserve(attrib.vertices.size() / 3);
     out_uvs.reserve(attrib.texcoords.size() / 2);
     out_normals.reserve(attrib.normals.size() / 3);
-    out_materials = materials; // Store loaded materials
+                        out_materials = materials; // Store loaded materials
 
     // Example: Create a transformation matrix (scaling + rotation + translation)
     if(!isLoadingBoard)

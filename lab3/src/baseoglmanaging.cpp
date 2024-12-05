@@ -46,6 +46,9 @@ std::optional<OpenGLRuntimeParams> setupScene()
     glfwPollEvents();
     glfwSetCursorPos(params.current_window, 1024/2, 768/2);
 
+    // Dark blue background
+    glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+    
     // Enable depth test
     glEnable(GL_DEPTH_TEST);
     // Accept fragment if it is closer to the camera than the former one
@@ -66,11 +69,11 @@ std::optional<OpenGLRuntimeParams> setupScene()
     // Get a handle for our "lightToggleSwitch" uniform
     params.lightSwitchID = glGetUniformLocation(params.programID, "lightSwitch");
 
-
+    params.lightID = glGetUniformLocation(params.programID, "LightPosition_worldspace");
     return params;
 }
 
 void destroyScene(OpenGLRuntimeParams &curParams)
 {
-
+    
 }
