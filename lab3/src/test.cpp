@@ -71,6 +71,7 @@ int main( void )
 	bool res = loadOBJ("data/chess3.obj", vertices, uvs, normals, mats, texture_files, textureids);
 	bool re2 = loadOBJ("data/12951_Stone_Chess_Board_v1_L3.obj", vertices_board, uvs_board, normals_board, mats_board, texture_files_board, textureids_board, true);
 
+
 	std::vector<GLuint> textures;
     for (const auto& tex_file : texture_files) {
         textures.push_back(loadBMP_custom(tex_file.c_str()));  

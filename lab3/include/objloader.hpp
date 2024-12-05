@@ -2,6 +2,12 @@
 #define OBJLOADER_H
 #include "tiny_obj_loader.h" // Include the TinyOBJLoader header
 #include <GL/glew.h>
+
+#include <glm/glm.hpp>
+#include <assimp/Importer.hpp>      // C++ importer interface
+#include <assimp/scene.h>           // Output data structure
+#include <assimp/postprocess.h>     // Post processing flags
+
 bool loadOBJ(
     const char* path,
     std::vector<glm::vec3>& out_vertices,
@@ -11,6 +17,22 @@ bool loadOBJ(
     std::vector<std::string>& texture_files, // Store texture paths
 	std::vector<GLuint>& textureIDs, // Store texture IDs
     bool isLoadingBoard = false
+);
+
+struct Mesh {
+    GLuint vertexbuffer;
+    GLuint uvbuffer;
+    GLuint normalbuffer;
+    GLuint elementbuffer;
+    std::vector<unsigned short> indices;
+    std::vector<glm::vec3> vertices;
+    std::vector<glm::vec2> uvs;
+    std::vector<glm::vec3> normals;
+};
+
+bool loadobjfile(
+    const char* path,
+    std::vector<Mesh>& meshes  // This will store the meshes
 );
 
 #endif

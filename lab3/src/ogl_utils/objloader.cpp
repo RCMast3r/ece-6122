@@ -4,7 +4,7 @@
 #include <cstring>
 
 #include <glm/glm.hpp>
-
+#include <iostream>
 #include "objloader.hpp"
 
 // Very, VERY simple OBJ loader.
@@ -16,6 +16,120 @@
 // - More stable. Change a line in the OBJ file and it crashes.
 // - More secure. Change another line and you can inject code.
 // - Loading from memory, stream, etc
+
+void processMesh(
+	const aiMesh* mesh,
+	std::vector<unsigned short>& indices,
+	std::vector<glm::vec3>& vertices,
+	std::vector<glm::vec2>& uvs,
+	std::vector<glm::vec3>& normals
+) {
+	// Store initial size to adjust indices later
+	unsigned short baseIndex = static_cast<unsigned short>(vertices.size());
+
+	// Process vertices
+	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
+		aiVector3D pos = mesh->mVertices[i];
+		vertices.push_back(glm::vec3(pos.x, pos.y, pos.z));
+
+		// Process texture coordinates
+		if (mesh->mTextureCoords[0]) {
+			aiVector3D uv = mesh->mTextureCoords[0][i];
+			uvs.push_back(glm::vec2(uv.x, uv.y));
+		} else {
+			uvs.push_back(glm::vec2(0.0f, 0.0f)); // Default UV if none provided
+		}
+
+		// Process normals
+		if (mesh->mNormals) {
+			aiVector3D n = mesh->mNormals[i];
+			normals.push_back(glm::vec3(n.x, n.y, n.z));
+		}
+	}
+
+	// Process faces (indices)
+	for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
+		const aiFace& face = mesh->mFaces[i];
+		for (unsigned int j = 0; j < face.mNumIndices; j++) {
+			indices.push_back(baseIndex + face.mIndices[j]);
+		}
+	}
+}
+
+// Recursive function to process nodes
+void processNode(aiNode* node, const aiScene* scene, std::vector<Mesh>& meshes) {
+    // Process each mesh in the node
+    for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
+        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+
+        // Prepare a new mesh object
+        Mesh newMesh;
+
+        // Reserve space for vertex, normal, and texture data
+        newMesh.vertices.reserve(mesh->mNumVertices);
+        newMesh.uvs.reserve(mesh->mNumVertices);
+        newMesh.normals.reserve(mesh->mNumVertices);
+        newMesh.indices.reserve(mesh->mNumFaces * 3); // Assuming each face is a triangle
+
+        // Extract vertices, normals, and UVs
+        for (unsigned int v = 0; v < mesh->mNumVertices; ++v) {
+            newMesh.vertices.push_back(glm::vec3(
+                mesh->mVertices[v].x,
+                mesh->mVertices[v].y,
+                mesh->mVertices[v].z
+            ));
+            newMesh.normals.push_back(glm::vec3(
+                mesh->mNormals[v].x,
+                mesh->mNormals[v].y,
+                mesh->mNormals[v].z
+            ));
+
+            if (mesh->mTextureCoords[0]) {
+                newMesh.uvs.push_back(glm::vec2(
+                    mesh->mTextureCoords[0][v].x,
+                    mesh->mTextureCoords[0][v].y
+                ));
+            } else {
+                newMesh.uvs.push_back(glm::vec2(0.0f, 0.0f));
+            }
+        }
+
+        // Extract indices (faces)
+        for (unsigned int f = 0; f < mesh->mNumFaces; ++f) {
+            aiFace face = mesh->mFaces[f];
+            for (unsigned int i = 0; i < face.mNumIndices; ++i) {
+                newMesh.indices.push_back(face.mIndices[i]);
+            }
+        }
+
+        // Generate buffers for the mesh
+        glGenBuffers(1, &newMesh.vertexbuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, newMesh.vertexbuffer);
+        glBufferData(GL_ARRAY_BUFFER, newMesh.vertices.size() * sizeof(glm::vec3), newMesh.vertices.data(), GL_STATIC_DRAW);
+
+        glGenBuffers(1, &newMesh.uvbuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, newMesh.uvbuffer);
+        glBufferData(GL_ARRAY_BUFFER, newMesh.uvs.size() * sizeof(glm::vec2), newMesh.uvs.data(), GL_STATIC_DRAW);
+
+        glGenBuffers(1, &newMesh.normalbuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, newMesh.normalbuffer);
+        glBufferData(GL_ARRAY_BUFFER, newMesh.normals.size() * sizeof(glm::vec3), newMesh.normals.data(), GL_STATIC_DRAW);
+
+        glGenBuffers(1, &newMesh.elementbuffer);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, newMesh.elementbuffer);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, newMesh.indices.size() * sizeof(unsigned short), newMesh.indices.data(), GL_STATIC_DRAW);
+
+        // Add the mesh to the list
+        meshes.push_back(newMesh);
+    }
+
+    // Process each child node recursively
+    for (unsigned int i = 0; i < node->mNumChildren; ++i) {
+        processNode(node->mChildren[i], scene, meshes);
+    }
+}
+
+
 
 bool loadOBJ(
 	const char * path, 
@@ -190,3 +304,123 @@ bool loadAssImp(
 }
 
 #endif
+
+
+bool loadobjfile(
+    const char* path,
+    std::vector<Mesh>& meshes  // This will store the meshes
+) {
+    Assimp::Importer importer;
+
+    // Load the scene
+    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+    if (!scene) {
+        fprintf(stderr, "%s\n", importer.GetErrorString());
+        return false;
+    }
+
+    // Process the root node and its children to extract the meshes
+    meshes.clear();  // Clear existing meshes if any
+    processNode(scene->mRootNode, scene, meshes);
+
+    // Return success
+    return true;
+}
+
+
+
+// bool loadobjfile(
+//     const char* path,
+//     std::vector<Mesh>& meshes  // This will store the meshes
+// ) {
+//     Assimp::Importer importer;
+
+//     // Load the scene
+//     const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+//     if (!scene) {
+//         fprintf(stderr, "%s\n", importer.GetErrorString());
+//         return false;
+//     }
+
+//     // Process the root node and its children to extract the meshes
+//     meshes.clear();  // Clear existing meshes if any
+//     processNode(scene->mRootNode, scene, meshes);
+
+//     // Return success
+//     return true;
+// }
+
+// // Main function to load OBJ file
+// bool loadobjfile(
+// 	const char* path,
+// 	std::vector<unsigned short>& indices,
+// 	std::vector<glm::vec3>& vertices,
+// 	std::vector<glm::vec2>& uvs,
+// 	std::vector<glm::vec3>& normals
+// 	// std::vector<Texture>& textures
+// ) {
+// 	Assimp::Importer importer;
+
+// 	// Load the scene
+// 	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+// 	if (!scene) {
+// 		fprintf(stderr, "%s\n", importer.GetErrorString());
+// 		return false;
+// 	}
+
+// 	// Process the root node and its children
+// 	processNode(scene->mRootNode, scene, indices, vertices, uvs, normals);
+
+// 	// Center and normalize the object
+// 	glm::vec3 globalCentroid(0.0f);
+// 	size_t totalVertices = vertices.size();
+// 	for (const auto& vertex : vertices) {
+// 		globalCentroid += vertex;
+// 	}
+// 	if (totalVertices > 0) {
+// 		globalCentroid /= static_cast<float>(totalVertices);
+// 		for (auto& vertex : vertices) {
+// 			vertex -= globalCentroid;
+// 		}
+// 	}
+
+// 	// Normalize to fit within a unit sphere
+// 	float maxDistance = 0.0f;
+// 	for (const auto& vertex : vertices) {
+// 		float distance = glm::length(vertex);
+// 		if (distance > maxDistance) {
+// 			maxDistance = distance;
+// 		}
+// 	}
+// 	if (maxDistance > 0.0f) {
+// 		for (auto& vertex : vertices) {
+// 			vertex /= maxDistance;
+// 		}
+// 	}
+
+// 	// Load textures
+// 	if (scene->mNumMaterials > 0) {
+// 		for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
+// 			const aiMaterial* material = scene->mMaterials[i];
+
+// 			// Check for diffuse texture
+// 			if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
+// 				aiString texturePath;
+// 				if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS) {
+// 					// Texture texture;
+// 					// texture.path = std::string(texturePath.C_Str());
+
+// 					// Load the texture using stb_image
+// 					// texture.data = stbi_load(texture.path.c_str(), &texture.width, &texture.height, &texture.channels, 0);
+// 					// if (texture.data) {
+// 						// textures.push_back(texture);
+// 					// } else {
+// 						// std::cerr << "Failed to load texture: " << texture.path << std::endl;
+// 					// }
+// 				}
+// 			}
+// 		}
+// 	}
+
+// 	return true;
+// }
