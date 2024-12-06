@@ -61,7 +61,7 @@ void processNode(aiNode* node, const aiScene* scene, std::vector<Mesh>& meshes) 
     // Process each mesh in the node
     for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-
+		
         // Prepare a new mesh object
         Mesh newMesh;
 
@@ -71,13 +71,22 @@ void processNode(aiNode* node, const aiScene* scene, std::vector<Mesh>& meshes) 
         newMesh.normals.reserve(mesh->mNumVertices);
         newMesh.indices.reserve(mesh->mNumFaces * 3); // Assuming each face is a triangle
 
-        // Extract vertices, normals, and UVs
+        glm::vec3 minCoord(FLT_MAX);
+        glm::vec3 maxCoord(-FLT_MAX);
+
+        // Extract vertices, normals, and UVs, and compute bounding box
         for (unsigned int v = 0; v < mesh->mNumVertices; ++v) {
-            newMesh.vertices.push_back(glm::vec3(
+            glm::vec3 vertex(
                 mesh->mVertices[v].x,
                 mesh->mVertices[v].y,
                 mesh->mVertices[v].z
-            ));
+            );
+
+            // Update bounding box
+            minCoord = glm::min(minCoord, vertex);
+            maxCoord = glm::max(maxCoord, vertex);
+
+            newMesh.vertices.push_back(vertex);
             newMesh.normals.push_back(glm::vec3(
                 mesh->mNormals[v].x,
                 mesh->mNormals[v].y,
@@ -92,6 +101,15 @@ void processNode(aiNode* node, const aiScene* scene, std::vector<Mesh>& meshes) 
             } else {
                 newMesh.uvs.push_back(glm::vec2(0.0f, 0.0f));
             }
+        }
+
+        // Compute the center and scale
+        glm::vec3 center = (minCoord + maxCoord) * 0.5f;
+        float maxDimension = glm::max(maxCoord.x - minCoord.x, glm::max(maxCoord.y - minCoord.y, maxCoord.z - minCoord.z));
+
+        // Center and normalize vertices
+        for (auto& vertex : newMesh.vertices) {
+            vertex = (vertex - center) / maxDimension;
         }
 
         // Extract indices (faces)
@@ -119,6 +137,17 @@ void processNode(aiNode* node, const aiScene* scene, std::vector<Mesh>& meshes) 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, newMesh.elementbuffer);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, newMesh.indices.size() * sizeof(unsigned short), newMesh.indices.data(), GL_STATIC_DRAW);
 
+		auto material = scene->mMaterials[mesh->mMaterialIndex];
+		aiString texturePath;
+		// Check if the texture info is present
+		if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS)
+		{
+			// gChessComponent->storeTextureID(texturePath.C_Str());
+			std::cout << texturePath.C_Str() <<std::endl;
+			newMesh.textureFile = std::string(texturePath.C_Str());
+		} else {
+			std::cout <<"L no texture" <<std::endl;
+		}
         // Add the mesh to the list
         meshes.push_back(newMesh);
     }
@@ -128,7 +157,6 @@ void processNode(aiNode* node, const aiScene* scene, std::vector<Mesh>& meshes) 
         processNode(node->mChildren[i], scene, meshes);
     }
 }
-
 
 
 bool loadOBJ(
@@ -326,101 +354,3 @@ bool loadobjfile(
     // Return success
     return true;
 }
-
-
-
-// bool loadobjfile(
-//     const char* path,
-//     std::vector<Mesh>& meshes  // This will store the meshes
-// ) {
-//     Assimp::Importer importer;
-
-//     // Load the scene
-//     const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
-//     if (!scene) {
-//         fprintf(stderr, "%s\n", importer.GetErrorString());
-//         return false;
-//     }
-
-//     // Process the root node and its children to extract the meshes
-//     meshes.clear();  // Clear existing meshes if any
-//     processNode(scene->mRootNode, scene, meshes);
-
-//     // Return success
-//     return true;
-// }
-
-// // Main function to load OBJ file
-// bool loadobjfile(
-// 	const char* path,
-// 	std::vector<unsigned short>& indices,
-// 	std::vector<glm::vec3>& vertices,
-// 	std::vector<glm::vec2>& uvs,
-// 	std::vector<glm::vec3>& normals
-// 	// std::vector<Texture>& textures
-// ) {
-// 	Assimp::Importer importer;
-
-// 	// Load the scene
-// 	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
-// 	if (!scene) {
-// 		fprintf(stderr, "%s\n", importer.GetErrorString());
-// 		return false;
-// 	}
-
-// 	// Process the root node and its children
-// 	processNode(scene->mRootNode, scene, indices, vertices, uvs, normals);
-
-// 	// Center and normalize the object
-// 	glm::vec3 globalCentroid(0.0f);
-// 	size_t totalVertices = vertices.size();
-// 	for (const auto& vertex : vertices) {
-// 		globalCentroid += vertex;
-// 	}
-// 	if (totalVertices > 0) {
-// 		globalCentroid /= static_cast<float>(totalVertices);
-// 		for (auto& vertex : vertices) {
-// 			vertex -= globalCentroid;
-// 		}
-// 	}
-
-// 	// Normalize to fit within a unit sphere
-// 	float maxDistance = 0.0f;
-// 	for (const auto& vertex : vertices) {
-// 		float distance = glm::length(vertex);
-// 		if (distance > maxDistance) {
-// 			maxDistance = distance;
-// 		}
-// 	}
-// 	if (maxDistance > 0.0f) {
-// 		for (auto& vertex : vertices) {
-// 			vertex /= maxDistance;
-// 		}
-// 	}
-
-// 	// Load textures
-// 	if (scene->mNumMaterials > 0) {
-// 		for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
-// 			const aiMaterial* material = scene->mMaterials[i];
-
-// 			// Check for diffuse texture
-// 			if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
-// 				aiString texturePath;
-// 				if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS) {
-// 					// Texture texture;
-// 					// texture.path = std::string(texturePath.C_Str());
-
-// 					// Load the texture using stb_image
-// 					// texture.data = stbi_load(texture.path.c_str(), &texture.width, &texture.height, &texture.channels, 0);
-// 					// if (texture.data) {
-// 						// textures.push_back(texture);
-// 					// } else {
-// 						// std::cerr << "Failed to load texture: " << texture.path << std::endl;
-// 					// }
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	return true;
-// }

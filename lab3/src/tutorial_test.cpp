@@ -59,14 +59,14 @@ void computeMatricesFromInputs(){
 
 	// Get mouse position
 	double xpos, ypos;
-	glfwGetCursorPos(window, &xpos, &ypos);
+	// glfwGetCursorPos(window, &xpos, &ypos);
 
 	// Reset mouse position for next frame
-	glfwSetCursorPos(window, 1024/2, 768/2);
+	// glfwSetCursorPos(window, 1024/2, 768/2);
 
 	// Compute new orientation
-	horizontalAngle += mouseSpeed * float(1024/2 - xpos );
-	verticalAngle   += mouseSpeed * float( 768/2 - ypos );
+	// horizontalAngle += mouseSpeed * float(1024/2 - xpos );
+	// verticalAngle   += mouseSpeed * float( 768/2 - ypos );
 
 	// Direction : Spherical coordinates to Cartesian coordinates conversion
 	glm::vec3 direction(
@@ -117,6 +117,17 @@ void computeMatricesFromInputs(){
 	lastTime = currentTime;
 }
 
+void applyOffsetToMesh(Mesh& mesh, float offsetX) {
+    for (auto& vertex : mesh.vertices) {
+        vertex.x += offsetX;
+    }
+
+    // Update the OpenGL buffer with the modified vertices
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.vertexbuffer);
+    glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(glm::vec3), mesh.vertices.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0); // Unbind buffer for safety
+}
+
 GLuint createDummyTexture() {
     GLuint dummyTexture;
     glGenTextures(1, &dummyTexture);
@@ -124,6 +135,23 @@ GLuint createDummyTexture() {
 
     // Create a single-color 2x2 texture (e.g., white)
     unsigned char whitePixel[4] = {255, 255, 255, 255}; // RGBA
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, whitePixel);
+
+    // Texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    return dummyTexture;
+}
+
+GLuint createDummyTexture2() {
+    GLuint dummyTexture;
+    glGenTextures(1, &dummyTexture);
+    glBindTexture(GL_TEXTURE_2D, dummyTexture);
+
+    // Create a single-color 2x2 texture (e.g., white)
+    unsigned char whitePixel[4] = {122, 0, 0, 255}; // RGBA
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, whitePixel);
 
     // Texture parameters
@@ -161,7 +189,7 @@ int main(void) {
         return -1;
     }
 
-    glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+    // glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
     // Setup OpenGL settings
 
@@ -185,36 +213,24 @@ int main(void) {
     GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
 
     GLuint dummyTexture = createDummyTexture(); // Use dummy texture
+    GLuint dummyTextur2 = createDummyTexture2(); // Use dummy texture
     GLuint TextureID = glGetUniformLocation(programID, "myTextureSampler");
 
+    GLuint NormalTexture = loadBMP_custom("data/wooddark0.bmp");
     // (Load your OBJ file as before)
     std::vector<unsigned short> indices;
     std::vector<glm::vec3> indexed_vertices;
     std::vector<glm::vec2> indexed_uvs;
     std::vector<glm::vec3> indexed_normals;
     glm::vec3 centroid;
-    // loadobjfile("data/chess-mod.obj", indices, indexed_vertices, indexed_uvs, indexed_normals);
-    loadobjfile()
-    GLuint vertexbuffer;
-    glGenBuffers(1, &vertexbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, indexed_vertices.size() * sizeof(glm::vec3), &indexed_vertices[0], GL_STATIC_DRAW);
 
-    GLuint uvbuffer;
-    glGenBuffers(1, &uvbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-    glBufferData(GL_ARRAY_BUFFER, indexed_uvs.size() * sizeof(glm::vec2), &indexed_uvs[0], GL_STATIC_DRAW);
-
-    GLuint normalbuffer;
-    glGenBuffers(1, &normalbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-    glBufferData(GL_ARRAY_BUFFER, indexed_normals.size() * sizeof(glm::vec3), &indexed_normals[0], GL_STATIC_DRAW);
-
-    GLuint elementbuffer;
-    glGenBuffers(1, &elementbuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0], GL_STATIC_DRAW);
-
+    std::vector<Mesh> meshes;
+    loadobjfile("data/chess-mod.obj", meshes);
+    for (size_t i = 0; i < meshes.size(); ++i) {
+        applyOffsetToMesh(meshes[i], static_cast<float>(i));
+    }
+    
+    
     GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
     do {
@@ -234,37 +250,57 @@ int main(void) {
         glm::vec3 lightPos = glm::vec3(4, 4, 4);
         glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, dummyTexture);
-        glUniform1i(TextureID, 0);
 
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        
 
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        for (size_t i = 0; i < meshes.size(); ++i) {
+            // Bind buffers for the current mesh
+            glEnableVertexAttribArray(0);
+            glBindBuffer(GL_ARRAY_BUFFER, meshes[i].vertexbuffer);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-        glEnableVertexAttribArray(2);
-        glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+            glEnableVertexAttribArray(1);
+            glBindBuffer(GL_ARRAY_BUFFER, meshes[i].uvbuffer);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, (void*)0);
+            glEnableVertexAttribArray(2);
+            glBindBuffer(GL_ARRAY_BUFFER, meshes[i].normalbuffer);
+            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-        glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
-        glDisableVertexAttribArray(2);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshes[i].elementbuffer);
+            glDrawElements(GL_TRIANGLES, meshes[i].indices.size(), GL_UNSIGNED_SHORT, (void*)0);
+        
+            // glActiveTexture(GL_TEXTURE0);
+            // glBindTexture(GL_TEXTURE_2D, NormalTexture);
+            // // Set our "NormalTextureSampler" sampler to use Texture Unit 1
+            // glUniform1i(TextureID, 0);
+
+            if(i < 5)
+            {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, dummyTexture);
+                glUniform1i(TextureID, 0);
+            } else {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, dummyTextur2);
+                glUniform1i(TextureID, 0);
+            }
+            
+
+            // Disable vertex arrays after drawing
+            glDisableVertexAttribArray(0);
+            glDisableVertexAttribArray(1);
+            glDisableVertexAttribArray(2);
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);
 
-    glDeleteBuffers(1, &vertexbuffer);
-    glDeleteBuffers(1, &uvbuffer);
-    glDeleteBuffers(1, &normalbuffer);
-    glDeleteBuffers(1, &elementbuffer);
+    // glDeleteBuffers(1, &vertexbuffer);
+    // glDeleteBuffers(1, &uvbuffer);
+    // glDeleteBuffers(1, &normalbuffer);
+    // glDeleteBuffers(1, &elementbuffer);
     glDeleteProgram(programID);
     glDeleteTextures(1, &dummyTexture);
     glDeleteVertexArrays(1, &VertexArrayID);
