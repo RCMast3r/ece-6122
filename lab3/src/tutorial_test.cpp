@@ -162,6 +162,9 @@ GLuint createDummyTexture2() {
     return dummyTexture;
 }
 
+void setupChessBoard(tModelMap& cTModelMap);
+
+
 int main(void) {
     // (Initialization code remains unchanged)
     if (!glfwInit()) {
@@ -225,11 +228,26 @@ int main(void) {
     glm::vec3 centroid;
 
     std::vector<Mesh> meshes;
+
     loadobjfile("data/chess-mod.obj", meshes);
+    
+
     for (size_t i = 0; i < meshes.size(); ++i) {
         applyOffsetToMesh(meshes[i], static_cast<float>(i));
     }
-    
+    std::vector<chessComponent> gchessComponents;
+
+    bool cBoard = loadAssImpLab3("data/12951_Stone_Chess_Board_v1_L3.obj", gchessComponents);
+    for (auto cit = gchessComponents.begin(); cit != gchessComponents.end(); cit++)
+    {
+        // Setup VBO buffers
+        cit->setupGLBuffers();
+        
+        // Setup Texture
+        cit->setupTextureBuffers();
+    }
+    tModelMap cTModelMap;
+    setupChessBoard(cTModelMap);
     
     GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
@@ -250,9 +268,6 @@ int main(void) {
         glm::vec3 lightPos = glm::vec3(4, 4, 4);
         glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
-
-        
-
         for (size_t i = 0; i < meshes.size(); ++i) {
             // Bind buffers for the current mesh
             glEnableVertexAttribArray(0);
@@ -269,11 +284,6 @@ int main(void) {
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshes[i].elementbuffer);
             glDrawElements(GL_TRIANGLES, meshes[i].indices.size(), GL_UNSIGNED_SHORT, (void*)0);
-        
-            // glActiveTexture(GL_TEXTURE0);
-            // glBindTexture(GL_TEXTURE_2D, NormalTexture);
-            // // Set our "NormalTextureSampler" sampler to use Texture Unit 1
-            // glUniform1i(TextureID, 0);
 
             if(i < 5)
             {
@@ -292,6 +302,42 @@ int main(void) {
             glDisableVertexAttribArray(1);
             glDisableVertexAttribArray(2);
         }
+        // Run through all the chess game components for rendering
+        for (auto cit = gchessComponents.begin(); cit != gchessComponents.end(); cit++)
+        {            
+            // Seach for mesh rendering targets and counts
+            tPosition cTPosition = cTModelMap[cit->getComponentID()];
+            // std::cout << cit->getComponentID() <<std::endl;
+            // Repeat for pair of players using repetition count
+            for (unsigned int pit = 0; pit < cTPosition.rCnt; pit++)
+            {
+                // Modify the X for player repetition
+                tPosition cTPositionMorph = cTPosition;
+                // cTPositionMorph.tPos.x += pit * cTPosition.rDis * CHESS_BOX_SIZE;
+                // Pass it for Model matrix generation
+                glm::mat4 ModelMatrix = cit->genModelMatrix(cTPositionMorph);
+                // Genrate the MVP matrix
+                glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+
+                // Send our transformation to the currently bound shader, 
+                // in the "MVP" uniform
+                glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+                glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
+                glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
+
+                // Light is placed right on the top of the board
+                // with a decent height for good lighting across
+                // the board!
+                glm::vec3 lightPos = glm::vec3(0, 0, 15);
+                glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
+
+                // Bind our texture (set it up)
+                cit->setupTexture(TextureID);
+
+                // Render buffers
+                cit->renderMesh();
+            }
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -309,3 +355,40 @@ int main(void) {
     return 0;
 }
 
+
+void setupChessBoard(tModelMap& cTModelMap)
+{
+    // Target spec Hash
+    cTModelMap =
+    {
+        // Chess board              Count  rDis Angle      Axis             Scale                          Position (X, Y, Z)
+        {"12951_Stone_Chess_Board", {1,    0,   0.f,    {1, 0, 0},    glm::vec3(CBSCALE), {0.f,     0.f,                             PHEIGHT}}},
+        // First player             Count  rDis Angle      Axis             Scale                          Position (X, Y, Z)
+        {"Bishop_Cylinder",         {2,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
+        {"Object3",                 {2,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
+        {"ALFIERE3",                {2,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
+        {"REGINA2",                 {1,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
+        {"RE2",                     {1,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
+        {"PEDONE13",                {8,    1,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}}
+    };
+
+    // Second player derived from first player!!
+    // Second Player (TORRE02)
+    cTModelMap["TORRE02"] = cTModelMap["TORRE3"];
+    cTModelMap["TORRE02"].tPos.y = -cTModelMap["TORRE3"].tPos.y;
+    // Second Player (Object02)
+    cTModelMap["Object02"] = cTModelMap["Object3"];
+    cTModelMap["Object02"].tPos.y = -cTModelMap["Object3"].tPos.y;
+    // Second Player (ALFIERE02)
+    cTModelMap["ALFIERE02"] = cTModelMap["ALFIERE3"];
+    cTModelMap["ALFIERE02"].tPos.y = -cTModelMap["ALFIERE3"].tPos.y;
+    // Second Player (REGINA01)
+    cTModelMap["REGINA01"] = cTModelMap["REGINA2"];
+    cTModelMap["REGINA01"].tPos.y = -cTModelMap["REGINA2"].tPos.y;
+    // Second Player (RE01)
+    cTModelMap["RE01"] = cTModelMap["RE2"];
+    cTModelMap["RE01"].tPos.y = -cTModelMap["RE2"].tPos.y;
+    // Second Player (PEDONE12)
+    cTModelMap["PEDONE12"] = cTModelMap["PEDONE13"];
+    cTModelMap["PEDONE12"].tPos.y = -cTModelMap["PEDONE13"].tPos.y;
+}

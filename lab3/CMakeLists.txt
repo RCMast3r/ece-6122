@@ -78,6 +78,7 @@ add_executable(tutorial src/tutorial_test.cpp
   src/ogl_utils/shader.cpp
   src/ogl_utils/objloader.cpp
   src/baseoglmanaging.cpp
+  src/chessComponent.cpp
   )
 
   

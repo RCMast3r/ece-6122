@@ -8,6 +8,10 @@
 #include <assimp/scene.h>           // Output data structure
 #include <assimp/postprocess.h>     // Post processing flags
 
+// Include Chess Component Class    
+#include "chessComponent.h"
+#include "chessCommon.h"
+
 bool loadOBJ(
     const char* path,
     std::vector<glm::vec3>& out_vertices,
@@ -34,6 +38,14 @@ struct Mesh {
 bool loadobjfile(
     const char* path,
     std::vector<Mesh>& meshes  // This will store the meshes
+);
+
+
+
+// Reads the multiple meshes OBJ file
+bool loadAssImpLab3(
+	const char* path,
+	std::vector<chessComponent>& gchessComponents
 );
 
 #endif
