@@ -185,16 +185,12 @@ void chessComponent::setupGLBuffers()
 // Output: None
 void chessComponent::setupTexture(GLuint& TextureID)
 {
-    // Bind our texture in Texture Unit 0
-
-    if(Texture)
-    {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, Texture);
-        // Set our "myTextureSampler" sampler to use Texture Unit 0
-        glUniform1i(TextureID, 0);
-    }
-    
+    // Bind our texture in Texture Unit 1
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, Texture);
+    std::cout << Texture << std::endl;
+    // Set our "myTextureSampler" sampler to use Texture Unit 0
+    glUniform1i(TextureID, 0);
 }
 
 // Setup rendering buffers

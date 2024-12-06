@@ -164,7 +164,6 @@ GLuint createDummyTexture2() {
 
 void setupChessBoard(tModelMap& cTModelMap);
 
-
 int main(void) {
     // (Initialization code remains unchanged)
     if (!glfwInit()) {
@@ -214,12 +213,21 @@ int main(void) {
     GLuint MatrixID = glGetUniformLocation(programID, "MVP");
     GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
     GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
+    std::vector<chessComponent> gchessComponents;
+    bool cBoard = loadAssImpLab3("data/12951_Stone_Chess_Board_v1_L3.obj", gchessComponents);
+    for (auto cit = gchessComponents.begin(); cit != gchessComponents.end(); cit++)
+    {
+        // Setup VBO buffers
+        cit->setupGLBuffers();
+        // Setup Texture
+        cit->setupTextureBuffers();
+    }
 
     GLuint dummyTexture = createDummyTexture(); // Use dummy texture
     GLuint dummyTextur2 = createDummyTexture2(); // Use dummy texture
     GLuint TextureID = glGetUniformLocation(programID, "myTextureSampler");
 
-    GLuint NormalTexture = loadBMP_custom("data/wooddark0.bmp");
+    // GLuint NormalTexture = loadBMP_custom("data/wooddark0.bmp");
     // (Load your OBJ file as before)
     std::vector<unsigned short> indices;
     std::vector<glm::vec3> indexed_vertices;
@@ -235,17 +243,8 @@ int main(void) {
     for (size_t i = 0; i < meshes.size(); ++i) {
         applyOffsetToMesh(meshes[i], static_cast<float>(i));
     }
-    std::vector<chessComponent> gchessComponents;
-
-    bool cBoard = loadAssImpLab3("data/12951_Stone_Chess_Board_v1_L3.obj", gchessComponents);
-    for (auto cit = gchessComponents.begin(); cit != gchessComponents.end(); cit++)
-    {
-        // Setup VBO buffers
-        cit->setupGLBuffers();
-        
-        // Setup Texture
-        cit->setupTextureBuffers();
-    }
+   
+    
     tModelMap cTModelMap;
     setupChessBoard(cTModelMap);
     
@@ -285,16 +284,19 @@ int main(void) {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshes[i].elementbuffer);
             glDrawElements(GL_TRIANGLES, meshes[i].indices.size(), GL_UNSIGNED_SHORT, (void*)0);
 
-            if(i < 5)
-            {
-                glActiveTexture(GL_TEXTURE0);
+            
+            // if(i < 5)
+            // {
+                glActiveTexture(GL_TEXTURE2);
+
+                std::cout << "dummy:  " << dummyTexture<<std::endl;
                 glBindTexture(GL_TEXTURE_2D, dummyTexture);
-                glUniform1i(TextureID, 0);
-            } else {
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, dummyTextur2);
-                glUniform1i(TextureID, 0);
-            }
+                glUniform1i(TextureID, 2);
+            // } else {
+            //     glActiveTexture(GL_TEXTURE0);
+            //     glBindTexture(GL_TEXTURE_2D, dummyTextur2);
+            //     glUniform1i(TextureID, 0);
+            // }
             
 
             // Disable vertex arrays after drawing
@@ -312,24 +314,24 @@ int main(void) {
             for (unsigned int pit = 0; pit < cTPosition.rCnt; pit++)
             {
                 // Modify the X for player repetition
-                tPosition cTPositionMorph = cTPosition;
+                // tPosition cTPositionMorph = cTPosition;
                 // cTPositionMorph.tPos.x += pit * cTPosition.rDis * CHESS_BOX_SIZE;
                 // Pass it for Model matrix generation
-                glm::mat4 ModelMatrix = cit->genModelMatrix(cTPositionMorph);
+                // glm::mat4 ModelMatrix = cit->genModelMatrix(cTPositionMorph);
                 // Genrate the MVP matrix
-                glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+                // glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
-                // Send our transformation to the currently bound shader, 
-                // in the "MVP" uniform
-                glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-                glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
-                glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
+                // // Send our transformation to the currently bound shader, 
+                // // in the "MVP" uniform
+                // glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+                // glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
+                // glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
 
-                // Light is placed right on the top of the board
-                // with a decent height for good lighting across
-                // the board!
-                glm::vec3 lightPos = glm::vec3(0, 0, 15);
-                glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
+                // // Light is placed right on the top of the board
+                // // with a decent height for good lighting across
+                // // the board!
+                // glm::vec3 lightPos = glm::vec3(0, 0, 15);
+                // glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
                 // Bind our texture (set it up)
                 cit->setupTexture(TextureID);
@@ -362,7 +364,7 @@ void setupChessBoard(tModelMap& cTModelMap)
     cTModelMap =
     {
         // Chess board              Count  rDis Angle      Axis             Scale                          Position (X, Y, Z)
-        {"12951_Stone_Chess_Board", {1,    0,   0.f,    {1, 0, 0},    glm::vec3(CBSCALE), {0.f,     0.f,                             PHEIGHT}}},
+        {"12951_Stone_Chess_Board", {1,    0,   270.f,    {1, 0, 0},    glm::vec3(CBSCALE), {0.f,     0.f, PHEIGHT-3}}},
         // First player             Count  rDis Angle      Axis             Scale                          Position (X, Y, Z)
         {"Bishop_Cylinder",         {2,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
         {"Object3",                 {2,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
