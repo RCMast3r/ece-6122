@@ -25,7 +25,7 @@ struct coords
 struct CMD
 {
     cmdType type;
-    std::optional<std::variant<coords, float, std::monostate>> cmdVerb;
+    std::optional<std::variant<coords, float, std::string, std::monostate>> cmdVerb;
 };
 
 std::vector<std::string> split(const std::string& s, const std::string& delimiter);

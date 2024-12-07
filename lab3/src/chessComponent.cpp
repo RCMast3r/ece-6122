@@ -367,6 +367,7 @@ glm::mat4 chessComponent::genModelMatrix(tPosition& cTPosition)
     { // For Chess board eliminate the height by pushing it down by the height
         // Apply the adjustment (Z is compensated to push the board down by depth)
         tModel = glm::translate(tModel, {-cGeometricCener.x, -cGeometricCener.y, -cGeometricCener.z/2});
+        // tModel = glm::rotate(tModel, glm::radians(0.f), {0, 0, 1}); // for some reason the texture has the black and white squares inverted btw
     }
     else
     { // For all others get to X/Z plane with Y=0

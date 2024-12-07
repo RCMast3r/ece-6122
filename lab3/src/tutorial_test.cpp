@@ -23,21 +23,26 @@ using namespace glm;
 #include <vboindexer.hpp>
 
 #include <chesspiece.hpp>
+#include <ChessStateManager.h>
+#include <ChessBackend.h>
+
+#include <thread>
+#include <atomic>
+#include <mutex>
+#include <optional> // For std::optional
+
+std::atomic<bool> newCommandAvailable(false);
+std::optional<CMD> cmd = std::nullopt; // std::optional<CMD> for the shared command
+std::mutex cmdMutex;
+
 
 glm::mat4 ViewMatrix;
 glm::mat4 ProjectionMatrix;
 
-glm::mat4 getViewMatrix(){
-	return ViewMatrix;
-}
-glm::mat4 getProjectionMatrix(){
-	return ProjectionMatrix;
-}
 
 
 // Initial position : on +Z
 glm::vec3 position = glm::vec3( 0.0f, 1.6f, 1.4f );
-
 
 // Initial horizontal angle : toward -Z
 float horizontalAngle = 3.14f;
@@ -52,6 +57,22 @@ float mouseSpeed = 0.005f;
 glm::vec3 lightPos = glm::vec3(4, 4, 4);
 float lightPower = 75.0f;
 
+// std::optional<CMD> cmd = std::nullopt;
+void getUserCommandThread()
+{
+    while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0) {
+        std::optional<CMD> newCmd = getUserCommand(); // Get new command
+        
+        {
+            std::lock_guard<std::mutex> lock(cmdMutex); // Lock for thread-safe access
+            cmd = newCmd; // Update shared command
+        }
+        
+        newCommandAvailable = true; // Notify that new command is available
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(50)); // Adjust sleep duration as needed
+    }
+}
 
 glm::vec3 computeNewLightPosFromCoords(coords c)
 {
@@ -66,6 +87,14 @@ glm::vec3 computeNewLightPosFromCoords(coords c)
 
     return glm::vec3(x, y, z); 
 }
+
+glm::mat4 getViewMatrix(){
+	return ViewMatrix;
+}
+glm::mat4 getProjectionMatrix(){
+	return ProjectionMatrix;
+}
+
 void computeMatricesFromInputs(std::optional<CMD> cmd) {
     // glfwGetTime is called only once, the first time this function is called
     static double lastTime = glfwGetTime();
@@ -128,17 +157,6 @@ void computeMatricesFromInputs(std::optional<CMD> cmd) {
     lastTime = currentTime;
 }
 
-void applyOffsetToMesh(Mesh& mesh, float offsetX) {
-    for (auto& vertex : mesh.vertices) {
-        vertex.x += offsetX;
-    }
-
-    // Update the OpenGL buffer with the modified vertices
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(glm::vec3), mesh.vertices.data(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0); // Unbind buffer for safety
-}
-
 GLuint createSimpleTexture(uint8_t R, uint8_t G, uint8_t B, uint8_t A) {
     GLuint dummyTexture;
     glGenTextures(1, &dummyTexture);
@@ -155,78 +173,89 @@ GLuint createSimpleTexture(uint8_t R, uint8_t G, uint8_t B, uint8_t A) {
     return dummyTexture;
 }
 
-void drawChessPiece(GLuint matID, GLuint mmID, GLuint vmID, glm::mat4 projMat, glm::mat4 viewMat, GLuint textureID, ChessPiece piece)
+void drawChessPiece(GLuint matID, GLuint mmID, GLuint vmID, glm::mat4 projMat, glm::mat4 viewMat, GLuint textureID, ChessPiece& piece)
 {
-    auto ri = piece.getRenderInfo();
-    // first, bind texture
+    if(piece.isVisible())
+    {
+        auto ri = piece.getRenderInfo();
+        // first, bind texture
 
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, ri.texture);
-    glUniform1i(textureID, 2);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, ri.texture);
+        glUniform1i(textureID, 2);
 
-    // next, handle scaling and translation w.r.t board position
+        // next, handle scaling and translation w.r.t board position
 
-    glm::mat4 modelMatrix = glm::mat4(1.0f);
-    // scale
-    modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f, 0.1f, 0.1f));
-    // translate.
-    /////
-    // scale, translate and rotate the board coordinates into render coords: //
-    /////
-    glm::vec3 originalVector(piece.getPosition().x, 0.0f, piece.getPosition().y);
-    // Translation vector
-    glm::vec3 translation(6.0f, 0.0f, 6.0f);
-    // Scaling factor
-    glm::vec3 scaleFactors(1.7f);
-    // Rotation angle (in radians) and axis
-    float rotationAngle = glm::radians(180.0f); // 45 degrees
-    glm::vec3 rotationAxis(0.0f, 1.0f, 0.0f);  // Rotate around the Y-axis
+        glm::mat4 modelMatrix = glm::mat4(1.0f);
+        // scale
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f, 0.1f, 0.1f));
+        // translate.
+        /////
+        // scale, translate and rotate the board coordinates into render coords: //
+        /////
+        auto pos = piece.getCurrentPosition();
 
-    // Translation matrix
-    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), translation);
+        float z = 0.0f;
+        if(piece.isMoving() && piece.isKnight())
+        {
+            z = 0.7f;
+        }
+        glm::vec3 originalVector(pos.x, z, pos.y);
+        // Translation vector
+        glm::vec3 translation(6.0f, 0.0f, 6.0f);
+        // Scaling factor
+        glm::vec3 scaleFactors(1.7f);
+        // Rotation angle (in radians) and axis
+        float rotationAngle = glm::radians(180.0f); // 45 degrees
+        glm::vec3 rotationAxis(0.0f, 1.0f, 0.0f);  // Rotate around the Y-axis
 
-    // Scaling matrix
-    glm::mat4 scalingMatrix = glm::scale(glm::mat4(1.0f), scaleFactors);
+        // Translation matrix
+        glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), translation);
 
-    // Rotation matrix
-    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), rotationAngle, rotationAxis);
+        // Scaling matrix
+        glm::mat4 scalingMatrix = glm::scale(glm::mat4(1.0f), scaleFactors);
 
-    // Combined transformation matrix (order matters: scale -> rotate -> translate)
-    glm::mat4 transformationMatrix = translationMatrix * rotationMatrix * scalingMatrix;
-    glm::vec4 transformedVector = transformationMatrix * glm::vec4(originalVector, 1.0f);
+        // Rotation matrix
+        glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), rotationAngle, rotationAxis);
 
-    // Back to vec3 (ignore w component)
-    glm::vec3 result(transformedVector);
-    /////
-    /////
-    /////
+        // Combined transformation matrix (order matters: scale -> rotate -> translate)
+        glm::mat4 transformationMatrix = translationMatrix * rotationMatrix * scalingMatrix;
+        glm::vec4 transformedVector = transformationMatrix * glm::vec4(originalVector, 1.0f);
 
-    modelMatrix = glm::translate(modelMatrix, result);
-    glm::mat4 modelMVP = projMat * viewMat * modelMatrix;
+        // Back to vec3 (ignore w component)
+        glm::vec3 result(transformedVector);
+        /////
+        /////
+        /////
 
-    glUniformMatrix4fv(matID, 1, GL_FALSE, &modelMVP[0][0]);
-    glUniformMatrix4fv(mmID, 1, GL_FALSE, &modelMatrix[0][0]);
-    glUniformMatrix4fv(vmID, 1, GL_FALSE, &viewMat[0][0]);
+        modelMatrix = glm::translate(modelMatrix, result);
+        glm::mat4 modelMVP = projMat * viewMat * modelMatrix;
 
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, ri.vertexBuffer);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glUniformMatrix4fv(matID, 1, GL_FALSE, &modelMVP[0][0]);
+        glUniformMatrix4fv(mmID, 1, GL_FALSE, &modelMatrix[0][0]);
+        glUniformMatrix4fv(vmID, 1, GL_FALSE, &viewMat[0][0]);
 
-    glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, ri.uvbuffer);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, ri.vertexBuffer);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-    glEnableVertexAttribArray(2);
-    glBindBuffer(GL_ARRAY_BUFFER, ri.normalbuffer);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ARRAY_BUFFER, ri.uvbuffer);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ri.elementbuffer);
-    glDrawElements(GL_TRIANGLES, ri.indicesSize, GL_UNSIGNED_SHORT, (void*)0);
+        glEnableVertexAttribArray(2);
+        glBindBuffer(GL_ARRAY_BUFFER, ri.normalbuffer);
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-    // Disable vertex arrays after drawing
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ri.elementbuffer);
+        glDrawElements(GL_TRIANGLES, ri.indicesSize, GL_UNSIGNED_SHORT, (void*)0);
+
+        // Disable vertex arrays after drawing
+        glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
+        glDisableVertexAttribArray(2);
+    }
+
 }
 
 std::vector<ChessPiece> loadChessPieces(std::vector<Mesh>& meshes, GLuint whiteTexture, GLuint blackTexture)
@@ -241,7 +270,6 @@ std::vector<ChessPiece> loadChessPieces(std::vector<Mesh>& meshes, GLuint whiteT
             case 0: // bishop
             {
                 ChessPiece::RenderInfo ri;
-                
                 ri.vertexBuffer = meshes[i].vertexbuffer;
                 ri.uvbuffer = meshes[i].uvbuffer;
                 ri.normalbuffer = meshes[i].normalbuffer;
@@ -249,11 +277,11 @@ std::vector<ChessPiece> loadChessPieces(std::vector<Mesh>& meshes, GLuint whiteT
                 ri.indicesSize = meshes[i].indices.size();
                 ri.texture= whiteTexture;
 
-                chessPieces.emplace_back(ChessPiece::ChessPieceType::BISHOP, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(2, 0));
-                chessPieces.emplace_back(ChessPiece::ChessPieceType::BISHOP, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(5, 0));
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::BISHOP, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(2, 0), "f1");
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::BISHOP, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(5, 0), "c1");
                 ri.texture = blackTexture;
-                chessPieces.emplace_back(ChessPiece::ChessPieceType::BISHOP, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(2, 7));
-                chessPieces.emplace_back(ChessPiece::ChessPieceType::BISHOP, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(5, 7));
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::BISHOP, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(2, 7), "f8");
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::BISHOP, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(5, 7), "c8");
                 break;
             }
             case 2: // knight
@@ -265,11 +293,11 @@ std::vector<ChessPiece> loadChessPieces(std::vector<Mesh>& meshes, GLuint whiteT
                 ri.elementbuffer = meshes[i].elementbuffer;
                 ri.indicesSize = meshes[i].indices.size();
                 ri.texture= whiteTexture;
-                chessPieces.emplace_back(ChessPiece::ChessPieceType::KNIGHT, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(1, 0));
-                chessPieces.emplace_back(ChessPiece::ChessPieceType::KNIGHT, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(6, 0));
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::KNIGHT, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(1, 0), "g1");
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::KNIGHT, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(6, 0), "b1");
                 ri.texture = blackTexture;
-                chessPieces.emplace_back(ChessPiece::ChessPieceType::KNIGHT, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(1, 7));
-                chessPieces.emplace_back(ChessPiece::ChessPieceType::KNIGHT, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(6, 7));
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::KNIGHT, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(1, 7), "g8");
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::KNIGHT, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(6, 7), "b8");
                 break;
             }
             case 4: // pawn
@@ -280,12 +308,13 @@ std::vector<ChessPiece> loadChessPieces(std::vector<Mesh>& meshes, GLuint whiteT
                 ri.normalbuffer = meshes[i].normalbuffer;
                 ri.elementbuffer = meshes[i].elementbuffer;
                 ri.indicesSize = meshes[i].indices.size();
+                char mapping[] = {'h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'};
                 for(int i =0; i<8; i++)
                 {
                     ri.texture= whiteTexture;
-                    chessPieces.emplace_back(ChessPiece::ChessPieceType::PAWN, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(i, 1));
+                    chessPieces.emplace_back(ChessPiece::ChessPieceType::PAWN, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(i, 1), std::string(1, mapping[i])+"2");
                     ri.texture= blackTexture;
-                    chessPieces.emplace_back(ChessPiece::ChessPieceType::PAWN, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(i, 6));
+                    chessPieces.emplace_back(ChessPiece::ChessPieceType::PAWN, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(i, 6), std::string(1, mapping[i])+"7");
                 }
                 break;
             }
@@ -298,9 +327,9 @@ std::vector<ChessPiece> loadChessPieces(std::vector<Mesh>& meshes, GLuint whiteT
                 ri.elementbuffer = meshes[i].elementbuffer;
                 ri.indicesSize = meshes[i].indices.size();
                 ri.texture= whiteTexture;
-                chessPieces.emplace_back(ChessPiece::ChessPieceType::KING, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(3, 0));
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::KING, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(3, 0), "e1");
                 ri.texture= blackTexture;
-                chessPieces.emplace_back(ChessPiece::ChessPieceType::KING, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(3, 7));
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::KING, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(3, 7), "e8");
                 break;
             }
             case 8: // queen
@@ -312,9 +341,9 @@ std::vector<ChessPiece> loadChessPieces(std::vector<Mesh>& meshes, GLuint whiteT
                 ri.elementbuffer = meshes[i].elementbuffer;
                 ri.indicesSize = meshes[i].indices.size();
                 ri.texture= whiteTexture;
-                chessPieces.emplace_back(ChessPiece::ChessPieceType::QUEEN, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(4, 0));
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::QUEEN, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(4, 0), "d1");
                 ri.texture= blackTexture;
-                chessPieces.emplace_back(ChessPiece::ChessPieceType::QUEEN, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(4, 7));
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::QUEEN, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(4, 7), "d8");
                 break;
             }
             case 10: // rook
@@ -326,11 +355,11 @@ std::vector<ChessPiece> loadChessPieces(std::vector<Mesh>& meshes, GLuint whiteT
                 ri.elementbuffer = meshes[i].elementbuffer;
                 ri.indicesSize = meshes[i].indices.size();
                 ri.texture= whiteTexture;
-                chessPieces.emplace_back(ChessPiece::ChessPieceType::ROOK, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(0, 0));
-                chessPieces.emplace_back(ChessPiece::ChessPieceType::ROOK, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(7, 0));
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::ROOK, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(0, 0), "h1");
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::ROOK, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(7, 0), "a1");
                 ri.texture= blackTexture;
-                chessPieces.emplace_back(ChessPiece::ChessPieceType::ROOK, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(0, 7));
-                chessPieces.emplace_back(ChessPiece::ChessPieceType::ROOK, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(7, 7));
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::ROOK, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(0, 7), "h8");
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::ROOK, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(7, 7), "a8");
                 break;
             } 
         }
@@ -339,7 +368,13 @@ std::vector<ChessPiece> loadChessPieces(std::vector<Mesh>& meshes, GLuint whiteT
 }
 
 int main(void) {
-    // (Initialization code remains unchanged)
+
+    ECE_ChessEngine backend;
+    backend.InitializeEngine();
+    backend.sendMove("uci");
+    backend.sendMove("isready");
+    std::string moves = "";  // This will hold the list of moves made so far
+
     if (!glfwInit()) {
         fprintf(stderr, "Failed to initialize GLFW\n");
         getchar();
@@ -351,12 +386,13 @@ int main(void) {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(1024, 768, "Dummy Texture Example", NULL, NULL);
+    window = glfwCreateWindow(1024, 768, "Chess 3d", NULL, NULL);
     if (!window) {
         fprintf(stderr, "Failed to open GLFW window.\n");
         glfwTerminate();
         return -1;
     }
+
     glfwMakeContextCurrent(window);
 
     glewExperimental = true;
@@ -391,20 +427,14 @@ int main(void) {
     GLuint blackTexture = createSimpleTexture(0, 0, 0, 100); // Use dummy texture
     GLuint TextureID = glGetUniformLocation(programID, "myTextureSampler");
 
-    // (Load your OBJ file as before)
-    std::vector<unsigned short> indices;
-    std::vector<glm::vec3> indexed_vertices;
-    std::vector<glm::vec2> indexed_uvs;
-    std::vector<glm::vec3> indexed_normals;
-    glm::vec3 centroid;
-
     std::vector<Mesh> meshes;
     auto chessPieces = loadChessPieces(meshes, whiteTexture, blackTexture);
     
+    ChessStateManager chessManager(chessPieces);
     GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
-    // Define desired light properties
-    float lightPower = 75.0f; // Example desired light power
-    glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f); // Example: white light
+
+    float lightPower = 75.0f;
+    glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
     glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
@@ -414,12 +444,15 @@ int main(void) {
     // Set the light power
     GLint LightPowerID = glGetUniformLocation(programID, "LightPower");
     
-    std::optional<CMD> cmd = std::nullopt;
+    std::thread commandThread(getUserCommandThread);
+
+    // this holds the calculated move from the chess engine while the user pieces are moving
+    std::string engine_move_in_waiting = "";
+    computeMatricesFromInputs(std::nullopt);
     do {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(programID);
-
-        computeMatricesFromInputs(cmd);
+        
         glm::mat4 ProjectionMatrix = getProjectionMatrix();
         glm::mat4 ViewMatrix = getViewMatrix();
         glm::mat4 ModelMatrix = glm::mat4(1.0);
@@ -429,27 +462,16 @@ int main(void) {
         glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
         glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
 
-        if(cmd)
-        {
-            if((*cmd).type == cmdType::LIGHT)
-            {
-                auto coords = std::get<0>((*(*cmd).cmdVerb));
-                lightPos = computeNewLightPosFromCoords(coords);
-            }
-            if((*cmd).type == cmdType::POWER)
-            {
-                lightPower = std::get<1>((*(*cmd).cmdVerb));
-            }
-        }
+
         glUniform3f(LightColorID, lightColor.x, lightColor.y, lightColor.z);
         glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
         glUniform1f(LightPowerID, lightPower); 
 
-
+        // chessPieces.at(0).setGoalPosition({3,3});
         for (auto & chesspiece : chessPieces)
         {
-            auto curPos = chesspiece.getPosition();
-            chesspiece.setPosition(curPos);
+            // the draw command has the chess piece ref pass through and it calls the getCurrentPosition function, 
+            // during which the new position for the chess piece is calculated
             drawChessPiece(MatrixID, ModelMatrixID, ViewMatrixID, ProjectionMatrix, ViewMatrix, TextureID, chesspiece);
         }
         
@@ -476,14 +498,87 @@ int main(void) {
         glfwSwapBuffers(window);
         glfwPollEvents();
         
-        cmd = getUserCommand();
+        if (newCommandAvailable) {
+            std::lock_guard<std::mutex> lock(cmdMutex); // Lock for thread-safe access
+            if (cmd) {
+                if (cmd->type == cmdType::LIGHT) {
+                    auto coords = std::get<0>(*(cmd->cmdVerb));
+                    lightPos = computeNewLightPosFromCoords(coords);
+                }
+                if (cmd->type == cmdType::POWER) {
+                    lightPower = std::get<1>(*(cmd->cmdVerb));
+                }
+                if(cmd->type == cmdType::MOVE)
+                {
+                    auto move = std::get<2>(*(cmd->cmdVerb));
+                    if(chessManager.validateMove(move))
+                    {
+                        std::string out = "";
+                        bool engineError = false;
+                        moves += " " + move;
+                        std::cout << moves <<std::endl;
+                        backend.sendMove(std::string("position startpos moves") + moves);
+                        // Request engine's best move
+                        backend.sendMove("go depth 1");
+                        while ( (out.find("bestmove")) == std::string::npos) {
+                            (void)backend.getResponseMove(out);
+                            std::cout << out <<std::endl;
+                            if (out.find("mate") != std::string::npos) {
+                                if (out.find("mate") != std::string::npos) {
+                                    size_t matePos = out.find("mate");
+                                    int mateValue = std::stoi(out.substr(matePos + 5));
+                                    if (mateValue > 0) {
+                                        std::cout << "Checkmate you lose!!" << std::endl;
+                                        return 0;
+                                    } else if (mateValue < 0) {
+                                        std::cout << "Checkmate you win!!" << std::endl;
+                                        return 0;
+                                    }
+                                }
+                            }
+
+                            if(out.find("Cannot execute move") != std::string::npos)
+                            {
+                                engineError = true;
+                                moves.erase(moves.size() - 5); 
+                                break;
+                            }
+                        } 
+
+                        if((!engineError) && chessManager.applyMove(move))
+                        {
+                            // Extract the best move from the engine's response
+                            auto best_move = out.substr(out.find("bestmove") + 9, 4);
+                            std::cout << "Engine's best move: " << best_move << std::endl;
+                            moves += " " + best_move;
+                            // engine_move_in_waiting = best_move;
+                            chessManager.applyMove(best_move);
+
+                        } else {
+                            std::cout << "erm" <<std::endl;
+                        }
+                    } else {
+                        std::cout << "Invalid command or move!!" <<std::endl;
+                    }
+                    
+                }
+                
+                if(cmd->type == cmdType::QUIT)
+                {
+                    std::cout << "Thanks for playing!!" <<std::endl;
+                    return 0;
+                }
+            }
+
+
+            computeMatricesFromInputs(cmd);        
+            
+            newCommandAvailable = false; // Reset the flag after processing
+
+        }
     
     } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);
 
-    // glDeleteBuffers(1, &vertexbuffer);
-    // glDeleteBuffers(1, &uvbuffer);
-    // glDeleteBuffers(1, &normalbuffer);
-    // glDeleteBuffers(1, &elementbuffer);
     glDeleteProgram(programID);
     glDeleteTextures(1, &whiteTexture);
     glDeleteTextures(1, &blackTexture);

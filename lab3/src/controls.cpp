@@ -8,24 +8,6 @@
 using namespace glm;
 
 
-// glm::mat4 ViewMatrix;
-// glm::mat4 ProjectionMatrix;
-
-// glm::mat4 getViewMatrix(){
-// 	return ViewMatrix;
-// }
-// glm::mat4 getProjectionMatrix(){
-// 	return ProjectionMatrix;
-// }
-
-
-// float horizontalAngle = 3.14f;
-// float verticalAngle = 0.0f;
-// float initialFoV = 100.0f;
-// float speed = 3.0f; // 3 units / second
-// float mouseSpeed = 0.005f;
-// float distanceFromCenter = 2.0f; // Set initial distance from the origin
-
 ControlsManager::ControlsState ControlsManager::computeMatricesFromInputs(OpenGLRuntimeParams params){
 
     ControlsState state;

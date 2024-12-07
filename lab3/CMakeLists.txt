@@ -13,6 +13,7 @@ CPMAddPackage(
   NAME tinyobjloader
   URL https://github.com/tinyobjloader/tinyobjloader/archive/refs/tags/v2.0.0rc13.tar.gz
 )
+
 CPMAddPackage(
 	NAME assimp
 	URL https://github.com/assimp/assimp/archive/refs/tags/v5.4.3.tar.gz
@@ -43,32 +44,10 @@ set(CMAKE_EXPORT_COMPILES_COMMANDS ON)
 
 
 find_package(OpenGL REQUIRED)
-# find_package(glm REQUIRED CONFIG)
 find_package(GLEW REQUIRED)
-# GLFW
-# find_package(glfw3 REQUIRED CONFIG)
-# find_package(tinyobjloader CONFIG)
-# add_executable(lab3 src/test.cpp 
-#   # src/shader.cpp 
-#   src/controls.cpp 
-#   src/objloader.cpp
-#   src/texture.cpp
-#   src/vboindexer.cpp
-#   src/transform.cpp
 
-#   src/ogl_utils/shader.cpp
-
-#   src/baseoglmanaging.cpp
-#   )
-
-  
-# target_compile_features(lab3 PUBLIC cxx_std_20)
-# target_link_libraries(lab3 PUBLIC glm::glm glfw GLEW::GLEW OpenGL::OpenGL tinyobjloader assimp::assimp)
-# target_include_directories(lab3 PUBLIC include)
-# target_include_directories(lab3 PUBLIC include/ogl_utils)
-
-add_executable(tutorial src/tutorial_test.cpp 
-  src/controls.cpp 
+add_executable(final_project src/tutorial_test.cpp 
+  # src/controls.cpp 
   src/texture.cpp
   src/vboindexer.cpp
   src/transform.cpp
@@ -77,12 +56,17 @@ add_executable(tutorial src/tutorial_test.cpp
   src/chessComponent.cpp
   src/chesspiece.cpp
   src/cmdlinehandler.cpp
+
   src/ogl_utils/shader.cpp
   src/ogl_utils/objloader.cpp
+
+  src/chessbackend/ChessBackend.cpp
+  src/chessbackend/ChessStateManager.cpp
 )
 
-  
-target_compile_features(tutorial PUBLIC cxx_std_20)
-target_link_libraries(tutorial PUBLIC glm::glm glfw GLEW::GLEW OpenGL::OpenGL assimp::assimp tinyobjloader)
-target_include_directories(tutorial PUBLIC include)
-target_include_directories(tutorial PUBLIC include/ogl_utils)
+target_compile_features(final_project PUBLIC cxx_std_20)
+target_link_libraries(final_project PUBLIC glm::glm glfw GLEW::GLEW OpenGL::OpenGL assimp::assimp tinyobjloader)
+target_include_directories(final_project PUBLIC include)
+target_include_directories(final_project PUBLIC include/ogl_utils)
+target_include_directories(final_project PUBLIC include/chessbackend)
+

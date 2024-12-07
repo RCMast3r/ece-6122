@@ -46,10 +46,10 @@ std::optional<CMD> getUserCommand()
             c.r = std::stof(verbs[3]);
 
             // Validate ranges
-            // if (c.theta < 10.0f || c.theta > 80.0f || c.phi < 0.0f || c.phi > 360.0f || c.r <= 0.0f) {
-                // std::cout << "Invalid command or move!! invalid range" << std::endl;
-                // return std::nullopt;
-            // }
+            if (c.theta < 10.0f || c.theta > 80.0f || c.phi < 0.0f || c.phi > 360.0f || c.r <= 0.0f) {
+                std::cout << "Invalid command or move!! invalid range" << std::endl;
+                return std::nullopt;
+            }
 
             out.type = (verbs[0] == "camera") ? cmdType::CAMERA : cmdType::LIGHT;
             out.cmdVerb = c;
@@ -90,7 +90,7 @@ std::optional<CMD> getUserCommand()
             return std::nullopt;
         }
         out.type = cmdType::MOVE;
-        out.cmdVerb = std::monostate{}; // No additional data for simplicity
+        out.cmdVerb = verbs[1]; 
         return out;
     }
 
