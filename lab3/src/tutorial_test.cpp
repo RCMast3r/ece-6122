@@ -1,4 +1,5 @@
 // Include standard headers
+#include "cmdlinehandler.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
@@ -21,6 +22,8 @@ using namespace glm;
 #include <objloader.hpp>
 #include <vboindexer.hpp>
 
+#include <chesspiece.hpp>
+
 glm::mat4 ViewMatrix;
 glm::mat4 ProjectionMatrix;
 
@@ -33,88 +36,96 @@ glm::mat4 getProjectionMatrix(){
 
 
 // Initial position : on +Z
-glm::vec3 position = glm::vec3( 0, 0, 5 );
+glm::vec3 position = glm::vec3( 0.0f, 1.6f, 1.4f );
 
 
 // Initial horizontal angle : toward -Z
 float horizontalAngle = 3.14f;
 // Initial vertical angle : none
-float verticalAngle = 0.0f;
+float verticalAngle = -1.0f;
 // Initial Field of View
-float initialFoV = 45.0f;
+float initialFoV = 70.0f;
 
 float speed = 3.0f; // 3 units / second
 float mouseSpeed = 0.005f;
 
+glm::vec3 lightPos = glm::vec3(4, 4, 4);
+float lightPower = 75.0f;
 
 
-void computeMatricesFromInputs(){
+glm::vec3 computeNewLightPosFromCoords(coords c)
+{
+    // Convert angles from degrees to radians
+    float thetaRad = glm::radians(c.theta);
+    float phiRad = glm::radians(c.phi);
 
-	// glfwGetTime is called only once, the first time this function is called
-	static double lastTime = glfwGetTime();
+    // Compute Cartesian coordinates
+    float x = c.r * cos(phiRad) * sin(thetaRad);
+    float y = c.r * sin(phiRad);
+    float z = c.r * cos(phiRad) * cos(thetaRad);
 
-	// Compute time difference between current and last frame
-	double currentTime = glfwGetTime();
-	float deltaTime = float(currentTime - lastTime);
+    return glm::vec3(x, y, z); 
+}
+void computeMatricesFromInputs(std::optional<CMD> cmd) {
+    // glfwGetTime is called only once, the first time this function is called
+    static double lastTime = glfwGetTime();
 
-	// Get mouse position
-	double xpos, ypos;
-	// glfwGetCursorPos(window, &xpos, &ypos);
+    // Compute time difference between current and last frame
+    double currentTime = glfwGetTime();
+    float deltaTime = float(currentTime - lastTime);
 
-	// Reset mouse position for next frame
-	// glfwSetCursorPos(window, 1024/2, 768/2);
+    // Default radius (distance from origin) and angles
+    static float radius = 2.0f;
+    static float horizontalAngle = glm::radians(180.0f); // Default: facing forward
+    static float verticalAngle = glm::radians(120.0f);    // Default: no elevation
 
-	// Compute new orientation
-	// horizontalAngle += mouseSpeed * float(1024/2 - xpos );
-	// verticalAngle   += mouseSpeed * float( 768/2 - ypos );
+    // Update from command input
+    if (cmd) {
+        if ((*cmd).type == cmdType::CAMERA) {
+            coords c = std::get<coords>((*cmd).cmdVerb.value()); // Get spherical coordinates
+            horizontalAngle = glm::radians(c.theta + 180.0f);
+            verticalAngle = glm::radians((-c.phi) + 120.0f);
+            radius = c.r; // Update radius
+        }
+    }
 
-	// Direction : Spherical coordinates to Cartesian coordinates conversion
-	glm::vec3 direction(
-		cos(verticalAngle) * sin(horizontalAngle), 
-		sin(verticalAngle),
-		cos(verticalAngle) * cos(horizontalAngle)
-	);
-	
-	// Right vector
-	glm::vec3 right = glm::vec3(
-		sin(horizontalAngle - 3.14f/2.0f), 
-		0,
-		cos(horizontalAngle - 3.14f/2.0f)
-	);
-	
-	// Up vector
-	glm::vec3 up = glm::cross( right, direction );
+    // Ensure vertical angle stays within bounds to prevent flipping
 
-	// Move forward
-	if (glfwGetKey( window, GLFW_KEY_UP ) == GLFW_PRESS){
-		position += direction * deltaTime * speed;
-	}
-	// Move backward
-	if (glfwGetKey( window, GLFW_KEY_DOWN ) == GLFW_PRESS){
-		position -= direction * deltaTime * speed;
-	}
-	// Strafe right
-	if (glfwGetKey( window, GLFW_KEY_RIGHT ) == GLFW_PRESS){
-		position += right * deltaTime * speed;
-	}
-	// Strafe left
-	if (glfwGetKey( window, GLFW_KEY_LEFT ) == GLFW_PRESS){
-		position -= right * deltaTime * speed;
-	}
+    // Calculate the camera's position in Cartesian coordinates
+    glm::vec3 position = glm::vec3(
+        radius * cos(verticalAngle) * sin(horizontalAngle),
+        radius * sin(verticalAngle),
+        radius * cos(verticalAngle) * cos(horizontalAngle)
+    );
 
-	float FoV = initialFoV;// - 5 * glfwGetMouseWheel(); // Now GLFW 3 requires setting up a callback for this. It's a bit too complicated for this beginner's tutorial, so it's disabled instead.
+    // Direction vector (always pointing to the origin)
+    glm::vec3 direction = -position;
 
-	// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-	ProjectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, 0.1f, 100.0f);
-	// Camera matrix
-	ViewMatrix       = glm::lookAt(
-								position,           // Camera is here
-								position+direction, // and looks here : at the same position, plus "direction"
-								up                  // Head is up (set to 0,-1,0 to look upside-down)
-						   );
+    // Right vector (perpendicular to the direction, in the horizontal plane)
+    glm::vec3 right = glm::vec3(
+        sin(horizontalAngle - glm::pi<float>() / 2.0f),
+        0,
+        cos(horizontalAngle - glm::pi<float>() / 2.0f)
+    );
 
-	// For the next frame, the "last time" will be "now"
-	lastTime = currentTime;
+    // Up vector (perpendicular to both direction and right)
+    glm::vec3 up = glm::cross(right, direction);
+
+    // Field of View
+    float FoV = initialFoV;
+
+    // Projection matrix
+    ProjectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, 0.1f, 100.0f);
+
+    // Camera matrix
+    ViewMatrix = glm::lookAt(
+        position,  // Camera position
+        glm::vec3(0, 0, 0), // Look at the origin
+        up         // Head is up
+    );
+
+    // Update last time for the next frame
+    lastTime = currentTime;
 }
 
 void applyOffsetToMesh(Mesh& mesh, float offsetX) {
@@ -128,13 +139,12 @@ void applyOffsetToMesh(Mesh& mesh, float offsetX) {
     glBindBuffer(GL_ARRAY_BUFFER, 0); // Unbind buffer for safety
 }
 
-GLuint createDummyTexture() {
+GLuint createSimpleTexture(uint8_t R, uint8_t G, uint8_t B, uint8_t A) {
     GLuint dummyTexture;
     glGenTextures(1, &dummyTexture);
     glBindTexture(GL_TEXTURE_2D, dummyTexture);
 
-    // Create a single-color 2x2 texture (e.g., white)
-    unsigned char whitePixel[4] = {255, 255, 255, 255}; // RGBA
+    unsigned char whitePixel[4] = {R, G, B, A}; // RGBA
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, whitePixel);
 
     // Texture parameters
@@ -145,24 +155,188 @@ GLuint createDummyTexture() {
     return dummyTexture;
 }
 
-GLuint createDummyTexture2() {
-    GLuint dummyTexture;
-    glGenTextures(1, &dummyTexture);
-    glBindTexture(GL_TEXTURE_2D, dummyTexture);
+void drawChessPiece(GLuint matID, GLuint mmID, GLuint vmID, glm::mat4 projMat, glm::mat4 viewMat, GLuint textureID, ChessPiece piece)
+{
+    auto ri = piece.getRenderInfo();
+    // first, bind texture
 
-    // Create a single-color 2x2 texture (e.g., white)
-    unsigned char whitePixel[4] = {122, 0, 0, 255}; // RGBA
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, whitePixel);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, ri.texture);
+    glUniform1i(textureID, 2);
 
-    // Texture parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    // next, handle scaling and translation w.r.t board position
 
-    return dummyTexture;
+    glm::mat4 modelMatrix = glm::mat4(1.0f);
+    // scale
+    modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f, 0.1f, 0.1f));
+    // translate.
+    /////
+    // scale, translate and rotate the board coordinates into render coords: //
+    /////
+    glm::vec3 originalVector(piece.getPosition().x, 0.0f, piece.getPosition().y);
+    // Translation vector
+    glm::vec3 translation(6.0f, 0.0f, 6.0f);
+    // Scaling factor
+    glm::vec3 scaleFactors(1.7f);
+    // Rotation angle (in radians) and axis
+    float rotationAngle = glm::radians(180.0f); // 45 degrees
+    glm::vec3 rotationAxis(0.0f, 1.0f, 0.0f);  // Rotate around the Y-axis
+
+    // Translation matrix
+    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), translation);
+
+    // Scaling matrix
+    glm::mat4 scalingMatrix = glm::scale(glm::mat4(1.0f), scaleFactors);
+
+    // Rotation matrix
+    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), rotationAngle, rotationAxis);
+
+    // Combined transformation matrix (order matters: scale -> rotate -> translate)
+    glm::mat4 transformationMatrix = translationMatrix * rotationMatrix * scalingMatrix;
+    glm::vec4 transformedVector = transformationMatrix * glm::vec4(originalVector, 1.0f);
+
+    // Back to vec3 (ignore w component)
+    glm::vec3 result(transformedVector);
+    /////
+    /////
+    /////
+
+    modelMatrix = glm::translate(modelMatrix, result);
+    glm::mat4 modelMVP = projMat * viewMat * modelMatrix;
+
+    glUniformMatrix4fv(matID, 1, GL_FALSE, &modelMVP[0][0]);
+    glUniformMatrix4fv(mmID, 1, GL_FALSE, &modelMatrix[0][0]);
+    glUniformMatrix4fv(vmID, 1, GL_FALSE, &viewMat[0][0]);
+
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, ri.vertexBuffer);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, ri.uvbuffer);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    glEnableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, ri.normalbuffer);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ri.elementbuffer);
+    glDrawElements(GL_TRIANGLES, ri.indicesSize, GL_UNSIGNED_SHORT, (void*)0);
+
+    // Disable vertex arrays after drawing
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
 }
 
-void setupChessBoard(tModelMap& cTModelMap);
+std::vector<ChessPiece> loadChessPieces(std::vector<Mesh>& meshes, GLuint whiteTexture, GLuint blackTexture)
+{
+    loadobjfile("data/chess-mod.obj", meshes);
+
+    std::vector<ChessPiece> chessPieces;
+    for (size_t i = 0; i < meshes.size(); i++) {
+
+        switch (i)
+        {
+            case 0: // bishop
+            {
+                ChessPiece::RenderInfo ri;
+                
+                ri.vertexBuffer = meshes[i].vertexbuffer;
+                ri.uvbuffer = meshes[i].uvbuffer;
+                ri.normalbuffer = meshes[i].normalbuffer;
+                ri.elementbuffer = meshes[i].elementbuffer;
+                ri.indicesSize = meshes[i].indices.size();
+                ri.texture= whiteTexture;
+
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::BISHOP, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(2, 0));
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::BISHOP, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(5, 0));
+                ri.texture = blackTexture;
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::BISHOP, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(2, 7));
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::BISHOP, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(5, 7));
+                break;
+            }
+            case 2: // knight
+            {
+                ChessPiece::RenderInfo ri;
+                ri.vertexBuffer = meshes[i].vertexbuffer;
+                ri.uvbuffer = meshes[i].uvbuffer;
+                ri.normalbuffer = meshes[i].normalbuffer;
+                ri.elementbuffer = meshes[i].elementbuffer;
+                ri.indicesSize = meshes[i].indices.size();
+                ri.texture= whiteTexture;
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::KNIGHT, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(1, 0));
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::KNIGHT, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(6, 0));
+                ri.texture = blackTexture;
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::KNIGHT, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(1, 7));
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::KNIGHT, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(6, 7));
+                break;
+            }
+            case 4: // pawn
+            {
+                ChessPiece::RenderInfo ri;
+                ri.vertexBuffer = meshes[i].vertexbuffer;
+                ri.uvbuffer = meshes[i].uvbuffer;
+                ri.normalbuffer = meshes[i].normalbuffer;
+                ri.elementbuffer = meshes[i].elementbuffer;
+                ri.indicesSize = meshes[i].indices.size();
+                for(int i =0; i<8; i++)
+                {
+                    ri.texture= whiteTexture;
+                    chessPieces.emplace_back(ChessPiece::ChessPieceType::PAWN, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(i, 1));
+                    ri.texture= blackTexture;
+                    chessPieces.emplace_back(ChessPiece::ChessPieceType::PAWN, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(i, 6));
+                }
+                break;
+            }
+            case 6: // king
+            {
+                ChessPiece::RenderInfo ri;
+                ri.vertexBuffer = meshes[i].vertexbuffer;
+                ri.uvbuffer = meshes[i].uvbuffer;
+                ri.normalbuffer = meshes[i].normalbuffer;
+                ri.elementbuffer = meshes[i].elementbuffer;
+                ri.indicesSize = meshes[i].indices.size();
+                ri.texture= whiteTexture;
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::KING, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(3, 0));
+                ri.texture= blackTexture;
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::KING, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(3, 7));
+                break;
+            }
+            case 8: // queen
+            {
+                ChessPiece::RenderInfo ri;
+                ri.vertexBuffer = meshes[i].vertexbuffer;
+                ri.uvbuffer = meshes[i].uvbuffer;
+                ri.normalbuffer = meshes[i].normalbuffer;
+                ri.elementbuffer = meshes[i].elementbuffer;
+                ri.indicesSize = meshes[i].indices.size();
+                ri.texture= whiteTexture;
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::QUEEN, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(4, 0));
+                ri.texture= blackTexture;
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::QUEEN, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(4, 7));
+                break;
+            }
+            case 10: // rook
+            {
+                ChessPiece::RenderInfo ri;
+                ri.vertexBuffer = meshes[i].vertexbuffer;
+                ri.uvbuffer = meshes[i].uvbuffer;
+                ri.normalbuffer = meshes[i].normalbuffer;
+                ri.elementbuffer = meshes[i].elementbuffer;
+                ri.indicesSize = meshes[i].indices.size();
+                ri.texture= whiteTexture;
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::ROOK, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(0, 0));
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::ROOK, ChessPiece::Color::WHITE, ri, ChessPiece::BoardPos(7, 0));
+                ri.texture= blackTexture;
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::ROOK, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(0, 7));
+                chessPieces.emplace_back(ChessPiece::ChessPieceType::ROOK, ChessPiece::Color::BLACK, ri, ChessPiece::BoardPos(7, 7));
+                break;
+            } 
+        }
+    }
+    return chessPieces;
+}
 
 int main(void) {
     // (Initialization code remains unchanged)
@@ -191,15 +365,9 @@ int main(void) {
         return -1;
     }
 
-    // glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-
-    // Setup OpenGL settings
-
     // Dark blue background
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
     
-    // Enable depth test
-    // glEnable(GL_DEPTH_TEST);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glEnable(GL_CULL_FACE);
@@ -213,21 +381,16 @@ int main(void) {
     GLuint MatrixID = glGetUniformLocation(programID, "MVP");
     GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
     GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
-    std::vector<chessComponent> gchessComponents;
-    bool cBoard = loadAssImpLab3("data/12951_Stone_Chess_Board_v1_L3.obj", gchessComponents);
-    for (auto cit = gchessComponents.begin(); cit != gchessComponents.end(); cit++)
-    {
-        // Setup VBO buffers
-        cit->setupGLBuffers();
-        // Setup Texture
-        cit->setupTextureBuffers();
-    }
+    chessComponent gchessComponent;
+    bool cBoard = loadAssImpLab3("data/12951_Stone_Chess_Board_v1_L3.obj", gchessComponent);
 
-    GLuint dummyTexture = createDummyTexture(); // Use dummy texture
-    GLuint dummyTextur2 = createDummyTexture2(); // Use dummy texture
+    gchessComponent.setupGLBuffers();
+    gchessComponent.setupTextureBuffers();
+
+    GLuint whiteTexture = createSimpleTexture(255, 255, 255, 255); // Use dummy texture
+    GLuint blackTexture = createSimpleTexture(0, 0, 0, 100); // Use dummy texture
     GLuint TextureID = glGetUniformLocation(programID, "myTextureSampler");
 
-    // GLuint NormalTexture = loadBMP_custom("data/wooddark0.bmp");
     // (Load your OBJ file as before)
     std::vector<unsigned short> indices;
     std::vector<glm::vec3> indexed_vertices;
@@ -236,25 +399,27 @@ int main(void) {
     glm::vec3 centroid;
 
     std::vector<Mesh> meshes;
-
-    loadobjfile("data/chess-mod.obj", meshes);
-    
-
-    for (size_t i = 0; i < meshes.size(); ++i) {
-        applyOffsetToMesh(meshes[i], static_cast<float>(i));
-    }
-   
-    
-    tModelMap cTModelMap;
-    setupChessBoard(cTModelMap);
+    auto chessPieces = loadChessPieces(meshes, whiteTexture, blackTexture);
     
     GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
+    // Define desired light properties
+    float lightPower = 75.0f; // Example desired light power
+    glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f); // Example: white light
 
+    glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
+
+    // Set the light color
+    GLint LightColorID = glGetUniformLocation(programID, "LightColor");
+    
+    // Set the light power
+    GLint LightPowerID = glGetUniformLocation(programID, "LightPower");
+    
+    std::optional<CMD> cmd = std::nullopt;
     do {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(programID);
 
-        computeMatricesFromInputs();
+        computeMatricesFromInputs(cmd);
         glm::mat4 ProjectionMatrix = getProjectionMatrix();
         glm::mat4 ViewMatrix = getViewMatrix();
         glm::mat4 ModelMatrix = glm::mat4(1.0);
@@ -264,85 +429,55 @@ int main(void) {
         glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
         glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
 
-        glm::vec3 lightPos = glm::vec3(4, 4, 4);
-        glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
-
-        for (size_t i = 0; i < meshes.size(); ++i) {
-            // Bind buffers for the current mesh
-            glEnableVertexAttribArray(0);
-            glBindBuffer(GL_ARRAY_BUFFER, meshes[i].vertexbuffer);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-            glEnableVertexAttribArray(1);
-            glBindBuffer(GL_ARRAY_BUFFER, meshes[i].uvbuffer);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-            glEnableVertexAttribArray(2);
-            glBindBuffer(GL_ARRAY_BUFFER, meshes[i].normalbuffer);
-            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshes[i].elementbuffer);
-            glDrawElements(GL_TRIANGLES, meshes[i].indices.size(), GL_UNSIGNED_SHORT, (void*)0);
-
-            
-            // if(i < 5)
-            // {
-                glActiveTexture(GL_TEXTURE2);
-
-                std::cout << "dummy:  " << dummyTexture<<std::endl;
-                glBindTexture(GL_TEXTURE_2D, dummyTexture);
-                glUniform1i(TextureID, 2);
-            // } else {
-            //     glActiveTexture(GL_TEXTURE0);
-            //     glBindTexture(GL_TEXTURE_2D, dummyTextur2);
-            //     glUniform1i(TextureID, 0);
-            // }
-            
-
-            // Disable vertex arrays after drawing
-            glDisableVertexAttribArray(0);
-            glDisableVertexAttribArray(1);
-            glDisableVertexAttribArray(2);
-        }
-        // Run through all the chess game components for rendering
-        for (auto cit = gchessComponents.begin(); cit != gchessComponents.end(); cit++)
-        {            
-            // Seach for mesh rendering targets and counts
-            tPosition cTPosition = cTModelMap[cit->getComponentID()];
-            // std::cout << cit->getComponentID() <<std::endl;
-            // Repeat for pair of players using repetition count
-            for (unsigned int pit = 0; pit < cTPosition.rCnt; pit++)
+        if(cmd)
+        {
+            if((*cmd).type == cmdType::LIGHT)
             {
-                // Modify the X for player repetition
-                // tPosition cTPositionMorph = cTPosition;
-                // cTPositionMorph.tPos.x += pit * cTPosition.rDis * CHESS_BOX_SIZE;
-                // Pass it for Model matrix generation
-                // glm::mat4 ModelMatrix = cit->genModelMatrix(cTPositionMorph);
-                // Genrate the MVP matrix
-                // glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
-
-                // // Send our transformation to the currently bound shader, 
-                // // in the "MVP" uniform
-                // glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-                // glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
-                // glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
-
-                // // Light is placed right on the top of the board
-                // // with a decent height for good lighting across
-                // // the board!
-                // glm::vec3 lightPos = glm::vec3(0, 0, 15);
-                // glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
-
-                // Bind our texture (set it up)
-                cit->setupTexture(TextureID);
-
-                // Render buffers
-                cit->renderMesh();
+                auto coords = std::get<0>((*(*cmd).cmdVerb));
+                lightPos = computeNewLightPosFromCoords(coords);
+            }
+            if((*cmd).type == cmdType::POWER)
+            {
+                lightPower = std::get<1>((*(*cmd).cmdVerb));
             }
         }
+        glUniform3f(LightColorID, lightColor.x, lightColor.y, lightColor.z);
+        glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
+        glUniform1f(LightPowerID, lightPower); 
 
+
+        for (auto & chesspiece : chessPieces)
+        {
+            auto curPos = chesspiece.getPosition();
+            chesspiece.setPosition(curPos);
+            drawChessPiece(MatrixID, ModelMatrixID, ViewMatrixID, ProjectionMatrix, ViewMatrix, TextureID, chesspiece);
+        }
+        
+        // handle chess board manipulation and draw it
+        tPosition cTPositionMorph;
+        cTPositionMorph.rDis = 0.0;
+        cTPositionMorph.rAngle = -90.0f;
+        cTPositionMorph.rAxis = {1, 0, 0};
+        cTPositionMorph.cScale = glm::vec3(0.03);
+        cTPositionMorph.tPos = {0.f,     -0.05f, 0.f}; 
+        // Pass it for Model matrix generation
+        glm::mat4 mm = gchessComponent.genModelMatrix(cTPositionMorph);
+        // Genrate the MVP matrix
+        glm::mat4 mvpCb = ProjectionMatrix * ViewMatrix * mm;
+
+        // Send our transformation to the currently bound shader
+        // in the "MVP" uniform
+        glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvpCb[0][0]);
+        glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &mm[0][0]);
+        glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
+
+        gchessComponent.setupTexture(TextureID);
+        gchessComponent.renderMesh();
         glfwSwapBuffers(window);
         glfwPollEvents();
+        
+        cmd = getUserCommand();
+    
     } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);
 
     // glDeleteBuffers(1, &vertexbuffer);
@@ -350,47 +485,10 @@ int main(void) {
     // glDeleteBuffers(1, &normalbuffer);
     // glDeleteBuffers(1, &elementbuffer);
     glDeleteProgram(programID);
-    glDeleteTextures(1, &dummyTexture);
+    glDeleteTextures(1, &whiteTexture);
+    glDeleteTextures(1, &blackTexture);
     glDeleteVertexArrays(1, &VertexArrayID);
 
     glfwTerminate();
     return 0;
-}
-
-
-void setupChessBoard(tModelMap& cTModelMap)
-{
-    // Target spec Hash
-    cTModelMap =
-    {
-        // Chess board              Count  rDis Angle      Axis             Scale                          Position (X, Y, Z)
-        {"12951_Stone_Chess_Board", {1,    0,   270.f,    {1, 0, 0},    glm::vec3(CBSCALE), {0.f,     0.f, PHEIGHT-3}}},
-        // First player             Count  rDis Angle      Axis             Scale                          Position (X, Y, Z)
-        {"Bishop_Cylinder",         {2,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
-        {"Object3",                 {2,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
-        {"ALFIERE3",                {2,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
-        {"REGINA2",                 {1,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
-        {"RE2",                     {1,    0,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}},
-        {"PEDONE13",                {8,    1,   0.f,   {1, 0, 0},    glm::vec3(1), {0*CHESS_BOX_SIZE, 0*CHESS_BOX_SIZE, 0}}}
-    };
-
-    // Second player derived from first player!!
-    // Second Player (TORRE02)
-    cTModelMap["TORRE02"] = cTModelMap["TORRE3"];
-    cTModelMap["TORRE02"].tPos.y = -cTModelMap["TORRE3"].tPos.y;
-    // Second Player (Object02)
-    cTModelMap["Object02"] = cTModelMap["Object3"];
-    cTModelMap["Object02"].tPos.y = -cTModelMap["Object3"].tPos.y;
-    // Second Player (ALFIERE02)
-    cTModelMap["ALFIERE02"] = cTModelMap["ALFIERE3"];
-    cTModelMap["ALFIERE02"].tPos.y = -cTModelMap["ALFIERE3"].tPos.y;
-    // Second Player (REGINA01)
-    cTModelMap["REGINA01"] = cTModelMap["REGINA2"];
-    cTModelMap["REGINA01"].tPos.y = -cTModelMap["REGINA2"].tPos.y;
-    // Second Player (RE01)
-    cTModelMap["RE01"] = cTModelMap["RE2"];
-    cTModelMap["RE01"].tPos.y = -cTModelMap["RE2"].tPos.y;
-    // Second Player (PEDONE12)
-    cTModelMap["PEDONE12"] = cTModelMap["PEDONE13"];
-    cTModelMap["PEDONE12"].tPos.y = -cTModelMap["PEDONE13"].tPos.y;
 }

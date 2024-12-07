@@ -74,7 +74,7 @@ bool loadOBJ(
         transformMeshAttributes(attrib, shapes[0].mesh, transform, 1, {1.0, 1.0});
     } else {
         glm::mat4 transform = glm::mat4(1.0f);
-        transform = glm::rotate(transform, glm::radians(270.0f), glm::vec3(1, 0, 0));
+        transform = glm::rotate(transform, glm::radians(180.0f), glm::vec3(1, 0, 0));
         transform = glm::translate(transform, glm::vec3(10000.0f, 3000.0f, 4000.0f));
         transformMeshAttributes(attrib, shapes[0].mesh, transform, 1, {1.0, 1.0});       
     }

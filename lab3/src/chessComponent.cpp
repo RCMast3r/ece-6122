@@ -188,7 +188,7 @@ void chessComponent::setupTexture(GLuint& TextureID)
     // Bind our texture in Texture Unit 1
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, Texture);
-    std::cout << Texture << std::endl;
+    // std::cout << Texture << std::endl;
     // Set our "myTextureSampler" sampler to use Texture Unit 0
     glUniform1i(TextureID, 0);
 }
@@ -327,7 +327,7 @@ void chessComponent::storeTextureID(std::string cTextureFile)
     // Capture the component name
     this->cTextureFile = cTextureFile;
     // Testing
-    std::cout << "The texture file is " << this->cTextureFile << std::endl;
+    // std::cout << "The texture file is " << this->cTextureFile << std::endl;
 }
 
 // Store Mesh properties (mainly for debug and bound checks)

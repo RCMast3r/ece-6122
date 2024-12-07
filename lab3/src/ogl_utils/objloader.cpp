@@ -19,7 +19,7 @@
 
 
 // Reads the multiple meshes OBJ file
-bool loadAssImpLab3(const char* path, std::vector<chessComponent>& gchessComponents)
+bool loadAssImpLab3(const char* path, chessComponent& gchessComponents)
 {
 	Assimp::Importer importer;
 
@@ -38,78 +38,79 @@ bool loadAssImpLab3(const char* path, std::vector<chessComponent>& gchessCompone
 	// Loop assumes only one hierarchical node
 	// Full hierarchical node trace is not added to the code
 	// for this Lab
-	for (unsigned int i = 0; i < rNode->mNumChildren; i++)
-	{
-		// Node point to the Children iteratively
-		const aiNode * cNode = rNode->mChildren[i];
+	// for (unsigned int i = 0; i < rNode->mNumChildren; i++)
+	// {
 
-		// Read one by one the child sub-meshes
-		// Loop only supports one mesh per Child
-		const aiMesh* mesh = scene->mMeshes[cNode->mMeshes[0]];
+	// Node point to the Children iteratively
+	const aiNode * cNode = rNode->mChildren[0];
 
-		// Extract mesh properties
-		meshPropsT meshProps = {mesh->HasBones(), mesh->HasFaces(), mesh->HasNormals(),
-								mesh->HasPositions(), mesh->HasTangentsAndBitangents(),
-								mesh->HasTextureCoords(0), mesh->HasVertexColors(0),
-								mesh->GetNumUVChannels() };
+	// Read one by one the child sub-meshes
+	// Loop only supports one mesh per Child
+	const aiMesh* mesh = scene->mMeshes[cNode->mMeshes[0]];
 
-		// Create a chess comonent object 
+	// Extract mesh properties
+	meshPropsT meshProps = {mesh->HasBones(), mesh->HasFaces(), mesh->HasNormals(),
+							mesh->HasPositions(), mesh->HasTangentsAndBitangents(),
+							mesh->HasTextureCoords(0), mesh->HasVertexColors(0),
+							mesh->GetNumUVChannels() };
 
-		// why heap allocate here ?
-		chessComponent* gChessComponent = new chessComponent();
+	// Create a chess comonent object 
 
-		// Store mesh properties
-		gChessComponent->storeMeshProps(meshProps);
-		
-		// Grab child Node (mesh) name
-		gChessComponent->storeComponentID(cNode->mName.C_Str());
-		
-		// Reserve buffers
-		gChessComponent->reserveStorage(mesh->mNumVertices, mesh->mNumFaces);
+	// why heap allocate here ?
+	chessComponent* gChessComponent = new chessComponent();
 
-		// Fill vertices positions
-		for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-			aiVector3D pos = mesh->mVertices[i];
-			glm::vec3 mPos(pos.x, pos.y, pos.z);
-			gChessComponent->addVertices(mPos);
-		}
+	// Store mesh properties
+	gChessComponent->storeMeshProps(meshProps);
+	
+	// Grab child Node (mesh) name
+	gChessComponent->storeComponentID(cNode->mName.C_Str());
+	
+	// Reserve buffers
+	gChessComponent->reserveStorage(mesh->mNumVertices, mesh->mNumFaces);
 
-		std::cout << "Number of texture Coordinates " << mesh->GetNumUVChannels() << std::endl;
-		// Fill vertices texture coordinates
-		for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-			aiVector3D UVW = mesh->mTextureCoords[0][i]; // Assume only 1 set of UV coords; AssImp supports 8 UV sets.
-			glm::vec3 mUVW(UVW.x, UVW.y, 0.f);
-			gChessComponent->addTextureCor(mUVW);
-		}
-
-		// Fill vertices normals
-		for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-			aiVector3D n = mesh->mNormals[i];
-			glm::vec3 mNorm(n.x, n.y, n.z);
-			gChessComponent->addVerNormals(mNorm);
-		}
-
-		// Fill face indices
-		for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
-			// Assume the model has only triangles.
-			gChessComponent->addFaceIndices(&(mesh->mFaces[i].mIndices[0]));
-		}
-
-		// Access the material to get the Texture info
-		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-		aiString texturePath;
-		// Check if the texture info is present
-		if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS)
-		{
-			gChessComponent->storeTextureID(texturePath.C_Str());
-		}
-
-		// Push the class in the class vector
-		gchessComponents.push_back(*gChessComponent);
-
-		// Delete the Class to avoid mixing data 
-		delete gChessComponent;
+	// Fill vertices positions
+	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
+		aiVector3D pos = mesh->mVertices[i];
+		glm::vec3 mPos(pos.x, pos.y, pos.z);
+		gChessComponent->addVertices(mPos);
 	}
+
+	std::cout << "Number of texture Coordinates " << mesh->GetNumUVChannels() << std::endl;
+	// Fill vertices texture coordinates
+	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
+		aiVector3D UVW = mesh->mTextureCoords[0][i]; // Assume only 1 set of UV coords; AssImp supports 8 UV sets.
+		glm::vec3 mUVW(UVW.x, UVW.y, 0.f);
+		gChessComponent->addTextureCor(mUVW);
+	}
+
+	// Fill vertices normals
+	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
+		aiVector3D n = mesh->mNormals[i];
+		glm::vec3 mNorm(n.x, n.y, n.z);
+		gChessComponent->addVerNormals(mNorm);
+	}
+
+	// Fill face indices
+	for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
+		// Assume the model has only triangles.
+		gChessComponent->addFaceIndices(&(mesh->mFaces[i].mIndices[0]));
+	}
+
+	// Access the material to get the Texture info
+	aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+	aiString texturePath;
+	// Check if the texture info is present
+	if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS)
+	{
+		gChessComponent->storeTextureID(texturePath.C_Str());
+	}
+
+	// Push the class in the class vector
+	gchessComponents = *gChessComponent;
+
+	// Delete the Class to avoid mixing data 
+	delete gChessComponent;
+	// }
 
 	// The "scene" pointer will be deleted automatically by "importer"
 	// delete gChessComponent;
@@ -236,17 +237,7 @@ void processNode(aiNode* node, const aiScene* scene, std::vector<Mesh>& meshes) 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, newMesh.elementbuffer);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, newMesh.indices.size() * sizeof(unsigned short), newMesh.indices.data(), GL_STATIC_DRAW);
 
-		auto material = scene->mMaterials[mesh->mMaterialIndex];
-		aiString texturePath;
 		// Check if the texture info is present
-		if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS)
-		{
-			// gChessComponent->storeTextureID(texturePath.C_Str());
-			std::cout << texturePath.C_Str() <<std::endl;
-			newMesh.textureFile = std::string(texturePath.C_Str());
-		} else {
-			std::cout <<"L no texture" <<std::endl;
-		}
         // Add the mesh to the list
         meshes.push_back(newMesh);
     }

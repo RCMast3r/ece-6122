@@ -48,38 +48,38 @@ find_package(GLEW REQUIRED)
 # GLFW
 # find_package(glfw3 REQUIRED CONFIG)
 # find_package(tinyobjloader CONFIG)
-add_executable(lab3 src/test.cpp 
-  # src/shader.cpp 
-  src/controls.cpp 
-  src/objloader.cpp
-  src/texture.cpp
-  src/vboindexer.cpp
-  src/transform.cpp
+# add_executable(lab3 src/test.cpp 
+#   # src/shader.cpp 
+#   src/controls.cpp 
+#   src/objloader.cpp
+#   src/texture.cpp
+#   src/vboindexer.cpp
+#   src/transform.cpp
 
-  src/ogl_utils/shader.cpp
+#   src/ogl_utils/shader.cpp
 
-  src/baseoglmanaging.cpp
-  )
+#   src/baseoglmanaging.cpp
+#   )
 
   
-target_compile_features(lab3 PUBLIC cxx_std_20)
-target_link_libraries(lab3 PUBLIC glm::glm glfw GLEW::GLEW OpenGL::OpenGL tinyobjloader assimp::assimp)
-target_include_directories(lab3 PUBLIC include)
-target_include_directories(lab3 PUBLIC include/ogl_utils)
+# target_compile_features(lab3 PUBLIC cxx_std_20)
+# target_link_libraries(lab3 PUBLIC glm::glm glfw GLEW::GLEW OpenGL::OpenGL tinyobjloader assimp::assimp)
+# target_include_directories(lab3 PUBLIC include)
+# target_include_directories(lab3 PUBLIC include/ogl_utils)
 
 add_executable(tutorial src/tutorial_test.cpp 
-  # src/shader.cpp 
   src/controls.cpp 
-  # src/objloader.cpp
   src/texture.cpp
   src/vboindexer.cpp
   src/transform.cpp
-
-  src/ogl_utils/shader.cpp
-  src/ogl_utils/objloader.cpp
+  
   src/baseoglmanaging.cpp
   src/chessComponent.cpp
-  )
+  src/chesspiece.cpp
+  src/cmdlinehandler.cpp
+  src/ogl_utils/shader.cpp
+  src/ogl_utils/objloader.cpp
+)
 
   
 target_compile_features(tutorial PUBLIC cxx_std_20)

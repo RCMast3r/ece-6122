@@ -41,11 +41,10 @@ bool loadobjfile(
 );
 
 
-
 // Reads the multiple meshes OBJ file
 bool loadAssImpLab3(
 	const char* path,
-	std::vector<chessComponent>& gchessComponents
+	chessComponent& gchessComponents
 );
 
 #endif
