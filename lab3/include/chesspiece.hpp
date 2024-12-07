@@ -74,7 +74,7 @@ public:
         if (_state == State::MOVING)
         {
             // Move towards the goal position, adjust the position gradually
-            float speed = 0.01f;  // Control speed of movement (adjust as needed)
+            float speed = 0.05f;  // Control speed of movement (adjust as needed)
             float dx = _goalPosition.x - _position.x;
             float dy = _goalPosition.y - _position.y;
             

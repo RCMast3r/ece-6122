@@ -117,6 +117,7 @@ bool loadAssImpLab3(const char* path, chessComponent& gchessComponents)
 	return true;
 }
 
+
 void processMesh(
 	const aiMesh* mesh,
 	std::vector<unsigned short>& indices,

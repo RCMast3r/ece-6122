@@ -50,9 +50,11 @@ private:
     // Check functions
     bool _isKingInCheck(char king);
 
+    // transformation functions for handling transform of positions to relative coords
     std::pair<int, int> _algebraicToChessBoardCoord(const std::string &pos);
     std::pair<int, int> _translateToBoardCoords(std::pair<int, int> row_col);
 private:
+    // internal chess board
     char _board[8][8] = {
         {'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'},
         {'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'},

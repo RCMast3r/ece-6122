@@ -39,7 +39,6 @@ CPMAddPackage(
 )
 
 # generates compile commands for use with vscode / IDEs to enable auto-complete
-# set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_EXPORT_COMPILES_COMMANDS ON)
 
 
@@ -47,14 +46,10 @@ find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 
 add_executable(final_project src/tutorial_test.cpp 
-  # src/controls.cpp 
   src/texture.cpp
-  src/vboindexer.cpp
   src/transform.cpp
   
-  src/baseoglmanaging.cpp
   src/chessComponent.cpp
-  src/chesspiece.cpp
   src/cmdlinehandler.cpp
 
   src/ogl_utils/shader.cpp
