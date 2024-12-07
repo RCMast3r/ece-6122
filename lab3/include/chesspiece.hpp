@@ -1,3 +1,11 @@
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 12/07/24
+Description: my chess pieces header description for handling the calculation of the 
+ positions of the chess pieces and moving them around and maintaining the state of a piece
+*/
+
 #ifndef __CHESSPIECE_H__
 #define __CHESSPIECE_H__
 // Include GLEW

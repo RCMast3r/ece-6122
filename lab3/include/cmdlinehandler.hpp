@@ -1,3 +1,12 @@
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 12/07/24
+Description: 
+
+cmd handler function prototype and associated shared type definitions
+*/
+
 #ifndef __CMDLINEHANDLER_H__
 #define __CMDLINEHANDLER_H__
 

@@ -1,3 +1,10 @@
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 12/07/24
+Description: shader loading impl
+*/
+
 #include <stdio.h>
 #include <string>
 #include <vector>

@@ -1,6 +1,11 @@
 // Include GLFW
 
-
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 12/07/24
+Description: controls computation / handling
+*/
 
 #include <controls.hpp>
 

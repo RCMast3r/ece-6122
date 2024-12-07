@@ -1,4 +1,10 @@
 // Include standard headers
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 12/07/24
+Description: a large main application source containing the main() and some helper functions
+*/
 #include "cmdlinehandler.hpp"
 #include <stdio.h>
 #include <stdlib.h>
@@ -57,7 +63,7 @@ float mouseSpeed = 0.005f;
 glm::vec3 lightPos = glm::vec3(4, 4, 4);
 float lightPower = 75.0f;
 
-// std::optional<CMD> cmd = std::nullopt;
+// function to be given to thread for getting th user command within a thread to stop the window from dying constantly
 void getUserCommandThread()
 {
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0) {
@@ -74,6 +80,7 @@ void getUserCommandThread()
     }
 }
 
+// get the real position of the light from the desired sperical coordinates
 glm::vec3 computeNewLightPosFromCoords(coords c)
 {
     // Convert angles from degrees to radians
@@ -95,6 +102,10 @@ glm::mat4 getProjectionMatrix(){
 	return ProjectionMatrix;
 }
 
+// depending on if a command exists or not, compute new viz matrices.
+
+// technically, the theta is horizontal meaning that yes, it should indeed rotate to right right in theory 
+// (*if wikipedia is to be understood correctly)
 void computeMatricesFromInputs(std::optional<CMD> cmd) {
     // glfwGetTime is called only once, the first time this function is called
     static double lastTime = glfwGetTime();
@@ -157,6 +168,7 @@ void computeMatricesFromInputs(std::optional<CMD> cmd) {
     lastTime = currentTime;
 }
 
+// create a simple texture to use for the chess pieces since the bmps do not want to play nice with me
 GLuint createSimpleTexture(uint8_t R, uint8_t G, uint8_t B, uint8_t A) {
     GLuint dummyTexture;
     glGenTextures(1, &dummyTexture);
@@ -173,6 +185,7 @@ GLuint createSimpleTexture(uint8_t R, uint8_t G, uint8_t B, uint8_t A) {
     return dummyTexture;
 }
 
+// draw all of the chess pieces. will also elevate the knight if it is moving
 void drawChessPiece(GLuint matID, GLuint mmID, GLuint vmID, glm::mat4 projMat, glm::mat4 viewMat, GLuint textureID, ChessPiece& piece)
 {
     if(piece.isVisible())
@@ -195,6 +208,8 @@ void drawChessPiece(GLuint matID, GLuint mmID, GLuint vmID, glm::mat4 projMat, g
         /////
         auto pos = piece.getCurrentPosition();
 
+
+    /// where the handling of the elevation of the knight is handled
         float z = 0.0f;
         if(piece.isMoving() && piece.isKnight())
         {
@@ -258,6 +273,7 @@ void drawChessPiece(GLuint matID, GLuint mmID, GLuint vmID, glm::mat4 projMat, g
 
 }
 
+// load the chess piceces and append to the vector of meshes that exist
 std::vector<ChessPiece> loadChessPieces(std::vector<Mesh>& meshes, GLuint whiteTexture, GLuint blackTexture)
 {
     loadobjfile("data/chess-mod.obj", meshes);
@@ -367,6 +383,7 @@ std::vector<ChessPiece> loadChessPieces(std::vector<Mesh>& meshes, GLuint whiteT
     return chessPieces;
 }
 
+// main function 
 int main(void) {
 
     ECE_ChessEngine backend;

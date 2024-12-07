@@ -1,3 +1,12 @@
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 12/07/24
+Description: object loader header file description. I really dont like opengl and textures / meshes have been the really annoying.
+
+these functions have been hacked together from tutorials and provided examples. some of them work, most dont work the way they should.
+*/
+
 #ifndef OBJLOADER_H
 #define OBJLOADER_H
 #include "tiny_obj_loader.h" // Include the TinyOBJLoader header

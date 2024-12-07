@@ -1,3 +1,9 @@
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 12/07/24
+Description: state manager implementation
+*/
 #include <ChessStateManager.h>
 #include <cstring> 
     

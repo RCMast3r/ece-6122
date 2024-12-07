@@ -1,7 +1,8 @@
 /*
-
-Objective:
-Chess component class definition file
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 12/07/24
+Description: chess component ripped example. slightly modified / simplified
 */
 
 #include "chessComponent.h"

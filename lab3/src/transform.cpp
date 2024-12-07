@@ -1,3 +1,10 @@
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 12/07/24
+Description: cntrl+c + cntrl+v  from tutorial / provided code for transforms. not used.
+*/
+
 #include <transform.hpp>
 #include <unordered_set>
 // Helper function to apply a transformation matrix to a vertex

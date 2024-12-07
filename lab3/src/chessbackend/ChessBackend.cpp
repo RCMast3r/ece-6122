@@ -1,3 +1,10 @@
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 12/07/24
+Description: chess backend implementation
+*/
+
 #include <ChessBackend.h>
 
 bool ECE_ChessEngine::InitializeEngine()
@@ -31,7 +38,7 @@ bool ECE_ChessEngine::InitializeEngine()
         close(_outputPipe[1]);
 
         // Path to the engine executabl
-        // std::cout <<"opening w/ execlp" <<std::endl;
+        std::cout <<"opening w/ execlp" <<std::endl;
 
         const char* enginePath = "./data/komodo"; // Ensure the path is correct and executable is present
         execlp(enginePath, enginePath, nullptr);

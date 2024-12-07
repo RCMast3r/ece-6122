@@ -1,3 +1,9 @@
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 12/07/24
+Description: cmdling handler implementation for getting the user's input command
+*/
 #include <cmdlinehandler.hpp>
 
 std::vector<std::string> split(const std::string& s, const std::string& delimiter) {

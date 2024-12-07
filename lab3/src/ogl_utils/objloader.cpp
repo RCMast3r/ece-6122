@@ -1,3 +1,10 @@
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 12/07/24
+Description: objloader implementation
+*/
+
 #include <vector>
 #include <stdio.h>
 #include <string>

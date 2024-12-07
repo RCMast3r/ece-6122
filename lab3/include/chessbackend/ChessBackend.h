@@ -1,3 +1,9 @@
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 12/07/24
+Description: header file for the main chess backend for talking with the chess engine
+*/
 #ifndef __CHESSBACKEND_H__
 #define __CHESSBACKEND_H__
 #include <iostream>

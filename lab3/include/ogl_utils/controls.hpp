@@ -1,3 +1,9 @@
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 12/07/24
+Description: funcion prototypes that kinda arent needed
+*/
 #ifndef CONTROLS_HPP
 #define CONTROLS_HPP
 

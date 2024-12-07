@@ -1,3 +1,10 @@
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 12/07/24
+Description: texture loading function implementations
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

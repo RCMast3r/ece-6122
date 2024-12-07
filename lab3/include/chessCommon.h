@@ -1,9 +1,9 @@
 /*
-
-Objective:
-Game of Chess common file
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 12/07/24
+Description: copy-pastad common header from provided solution 
 */
-
 #ifndef COMMON_H
 #define COMMON_H
 

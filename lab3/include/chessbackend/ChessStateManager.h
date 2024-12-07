@@ -1,3 +1,11 @@
+/*
+Author: Ben Hall
+Class: ECE6122 (section)
+Last Date Modified: 12/07/24
+Description: header file for chess baord state manager. can validate moves and handle manipulation 
+ of chess pieces themselves for their desired positions they are moving to
+*/
+
 #ifndef __CHESSSTATEMANAGER_H__
 #define __CHESSSTATEMANAGER_H__
 #include <iostream>
